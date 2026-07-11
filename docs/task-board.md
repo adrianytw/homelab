@@ -6,7 +6,7 @@ Updated `2026-07-11`. A blocked task stops only its lane; see `human-review.md` 
 | --- | --- | --- | --- |
 | REPO-BASELINE | repository | done | Local commits and bare mirror are current; GitHub push is intentionally deferred. |
 | REPO-CHECKS | repository | done | Subsystem logs, ledgers, shell tests, Ansible syntax, OpenTofu format/validation, YAML parse, and secret scan pass. |
-| REPO-COMMIT | repository | done | Verified work committed locally and queued for bare-mirror synchronization; GitHub push remains deferred. |
+| REPO-COMMIT | repository | done | Verified work committed locally and synchronized to the bare mirror; GitHub push remains deferred. |
 | TF-ROOTS | OpenTofu | done | RouterOS and AdGuard roots are independently pinned and encrypted. |
 | TF-STATE-BACKUP | OpenTofu | done | Helper passes encrypted fixture, mode, checksum, commit-ID, and plaintext-rejection checks; no live state exists. |
 | TF-ROUTER-INVENTORY | OpenTofu | done | IDs `*1AB0`/`*1AB7`; no certificates; `www-ssl:443` is restricted with certificate `none`. |

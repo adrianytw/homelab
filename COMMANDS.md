@@ -50,3 +50,11 @@ Outcome: read-only inventories completed; shell, backup self-test, Ansible, Open
 The approved local-only staging step was rejected by the execution environment because workspace escalation credits were exhausted. The Git index, bare mirror, and GitHub remote were not changed.
 
 A later retry succeeded; the verified homelab paths were staged separately from `.codex` for local-only commits.
+
+```sh
+git commit --only -m "docs: add unattended operations runbooks" -- <documentation-paths>
+git commit --only -m "feat: prepare guarded homelab automation" -- <automation-paths>
+git -C ~/homelab-backups/git/homelab.git remote update
+```
+
+Outcome: local commits `4ca1517` and `9800d52` were created and mirrored. `origin/main` was not pushed.
