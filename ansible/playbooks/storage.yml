@@ -7,11 +7,6 @@
     homelab_data_dirs:
       - /srv/data
       - /srv/data/k3s-storage
-      - /srv/data/home-assistant-vm
-      - /srv/data/glance
-      - /srv/data/uptime-kuma
-      - /srv/data/ntfy
-      - /srv/data/healthchecks
   tasks:
     - name: Create homelab data directories
       ansible.builtin.file:

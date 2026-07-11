@@ -1,0 +1,87 @@
+---
+- name: Install pinned single-node k3s
+  hosts: macbook
+  become: true
+  gather_facts: true
+  vars:
+    k3s_version: v1.36.2+k3s1
+    k3s_installer_checksum: sha256:d264d4d43f7c5a27b44de0075513fb22dfb02d0b7cd33ba7a3838cb822f4729c
+  tasks:
+    - name: Require ARM64 host
+      ansible.builtin.assert:
+        that: ansible_architecture == "aarch64"
+        fail_msg: "k3s playbook is pinned for nmac ARM64, found {{ ansible_architecture }}"
+
+    - name: Check k3s storage path
+      ansible.builtin.stat:
+        path: /srv/data/k3s-storage
+      register: k3s_storage
+
+    - name: Require prepared k3s storage
+      ansible.builtin.assert:
+        that: k3s_storage.stat.isdir | default(false)
+        fail_msg: "run and verify the storage playbook before installing k3s"
+
+    - name: Create k3s configuration directory
+      ansible.builtin.file:
+        path: /etc/rancher/k3s
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Configure k3s
+      ansible.builtin.copy:
+        dest: /etc/rancher/k3s/config.yaml
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          write-kubeconfig-mode: "0600"
+          default-local-storage-path: /srv/data/k3s-storage
+          tls-san:
+            - "192.168.88.20"
+            - "nmac"
+      notify: Restart k3s
+
+    - name: Download pinned k3s installer
+      ansible.builtin.get_url:
+        url: https://get.k3s.io
+        dest: /var/tmp/k3s-install.sh
+        owner: root
+        group: root
+        mode: "0700"
+        checksum: "{{ k3s_installer_checksum }}"
+
+    - name: Install k3s
+      ansible.builtin.command: /var/tmp/k3s-install.sh
+      args:
+        # ponytail: first install only; add upgrade handling when upgrades enter scope.
+        creates: /usr/local/bin/k3s
+      environment:
+        INSTALL_K3S_VERSION: "{{ k3s_version }}"
+
+    - name: Enable and start k3s
+      ansible.builtin.systemd_service:
+        name: k3s
+        enabled: true
+        state: started
+
+    - name: Apply pending k3s restart
+      ansible.builtin.meta: flush_handlers
+
+    - name: Wait for Kubernetes API
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 6443
+        timeout: 120
+
+    - name: Verify node readiness
+      ansible.builtin.command: /usr/local/bin/k3s kubectl wait --for=condition=Ready node/nmac --timeout=120s
+      changed_when: false
+
+  handlers:
+    - name: Restart k3s
+      ansible.builtin.systemd_service:
+        name: k3s
+        state: restarted
