@@ -1,0 +1,39 @@
+# Generated knowledge graph
+graphify-out/
+
+# Inventory output
+diagnostics/*
+!diagnostics/.gitkeep
+
+# OpenTofu / Terraform local state
+.terraform/
+.tofu/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+# Secrets and local bootstrap values
+.env
+.env.*
+*.kubeconfig
+kubeconfig*
+secrets/age/*
+!secrets/age/README.md
+*.key
+*.pem
+*.p12
+
+# Backups and generated artifacts
+*.backup
+*.bak
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.log
+
+# Windows/macOS transfer sidecars
+*:Zone.Identifier
+.DS_Store

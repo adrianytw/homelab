@@ -1,0 +1,23 @@
+---
+- name: Prepare MacBook storage
+  hosts: macbook
+  become: true
+  gather_facts: false
+  vars:
+    homelab_data_dirs:
+      - /srv/data
+      - /srv/data/k3s-storage
+      - /srv/data/home-assistant-vm
+      - /srv/data/glance
+      - /srv/data/uptime-kuma
+      - /srv/data/ntfy
+      - /srv/data/healthchecks
+  tasks:
+    - name: Create homelab data directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop: "{{ homelab_data_dirs }}"
