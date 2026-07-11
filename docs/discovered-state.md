@@ -1,6 +1,6 @@
 # Discovered State
 
-Collected read-only over `ssh router` and `ssh nmac`.
+Collected read-only over `ssh router` and `ssh nmac`; last refreshed `2026-07-11`.
 
 ## RouterOS
 
@@ -19,6 +19,10 @@ Collected read-only over `ssh router` and `ssh nmac`.
 | DNS remote requests | enabled |
 | RouterOS API | enabled on `8728`; review before OpenTofu use |
 | RouterOS API SSL | enabled on `8729`; certificate `none` |
+| RouterOS HTTPS REST | `www-ssl` on `443`, LAN/WireGuard restricted, certificate `none` |
+| RouterOS certificates | none |
+| `nmac` lease ID | `*1AB0` |
+| Home Assistant lease ID | `*1AB7` |
 
 ## AdGuard Container
 
@@ -52,12 +56,17 @@ Do not change these without a fresh RouterOS backup/export and explicit apply co
 | Architecture | `aarch64` |
 | Main interface | `enu1u1c2` |
 | IP | `192.168.88.20/24` |
-| Root filesystem | `271G`, about `223G` free at discovery |
+| Root filesystem | `271G`, about `223G` free, `18%` used |
 | `/srv/data` | absent |
 | k3s | absent |
+| Ports `80`/`443`/`6443` | no listeners |
+| SELinux | enforcing |
+| Active NetworkManager profile | `Wired connection 2` on `enu1u1c2` |
+| Default route / DNS | `192.168.88.1` / `192.168.88.1` |
+| Non-interactive sudo | unavailable |
 | Cockpit socket | enabled/active |
 | libvirt VM | `haos` running |
-| Firewalld active zone | `FedoraWorkstation` on `enu1u1c2` |
+| Firewalld active zone | last known `FedoraWorkstation` on `enu1u1c2`; fresh privileged inventory blocked |
 
 ## Home Assistant VM
 

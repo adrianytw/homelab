@@ -32,3 +32,21 @@ git push -u origin main
 ```
 
 Outcome: baseline commit `3afc09a` was pushed to `origin/main`; the bare off-repository mirror was created. The `.codex` tooling remained staged but excluded from the commit.
+
+## Unattended preparation — 2026-07-11
+
+```sh
+graphify query "Which files should change for unattended task tracking, OpenTofu recovery, host inventory, and runbook hardening?"
+make inventory-router
+make inventory-nmac
+make check
+make ansible-check
+TF_VAR_state_passphrase='<state-passphrase>' tofu -chdir=opentofu/routeros validate
+TF_VAR_state_passphrase='<state-passphrase>' tofu -chdir=opentofu/adguard validate
+```
+
+Outcome: read-only inventories completed; shell, backup self-test, Ansible, OpenTofu, YAML, and secret checks passed. No infrastructure mutation, apply, key generation, or GitHub push occurred.
+
+The approved local-only staging step was rejected by the execution environment because workspace escalation credits were exhausted. The Git index, bare mirror, and GitHub remote were not changed.
+
+A later retry succeeded; the verified homelab paths were staged separately from `.codex` for local-only commits.

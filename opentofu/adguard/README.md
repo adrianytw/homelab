@@ -1,6 +1,6 @@
 # AdGuard OpenTofu root
 
-This root intentionally declares no resources yet. Export AdGuard recovery data and inventory every rewrite and singleton DNS field before adding declarations. The router-internal `10.0.0.2` address is not a client endpoint, and `adguard.nairdev.com` must not be assumed to route to the UI.
+This root intentionally declares no resources yet. Export AdGuard recovery data and inventory every rewrite before adding declarations. The `adguard_config` singleton owns the provider's full supported server configuration and stays deferred unless every field is captured and that broad ownership is approved. The router-internal `10.0.0.2` address is not a client endpoint, and `adguard.nairdev.com` must not be assumed to route to the UI.
 
 Required environment:
 

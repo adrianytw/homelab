@@ -27,6 +27,8 @@ Repository baseline
 
 OpenTofu, host preparation, and recovery may progress independently. Device changes still require their documented safety gates.
 
+Live progress and deferred decisions are tracked in `docs/task-board.md` and `docs/human-review.md`.
+
 ## Checklist
 
 ### Source of truth
@@ -47,7 +49,7 @@ OpenTofu, host preparation, and recovery may progress independently. Device chan
 - [ ] Take fresh RouterOS and AdGuard backups before imports.
 - [ ] With explicit approval, configure a RouterOS-local TLS certificate and trusted `ROS_CA_CERTIFICATE`; never use plaintext API `8728`.
 - [ ] Import the `nmac` and Home Assistant leases individually, recording IDs in `opentofu/routeros/imports.md`; require a zero-diff detailed plan after each.
-- [ ] Inventory and import AdGuard rewrites individually, then its singleton DNS configuration, recording IDs in `opentofu/adguard/imports.md`.
+- [ ] Inventory and import AdGuard rewrites individually; import the full singleton configuration only after field-by-field capture and explicit ownership approval.
 - [ ] Copy encrypted state to `~/homelab-backups/opentofu/<timestamp>/` after every successful import/apply.
 - [ ] After ingress exists, make the first apply add only `test.k8s.nairdev.com -> 192.168.88.20`.
 

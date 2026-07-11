@@ -131,7 +131,7 @@ Public certificates do not mean public exposure. No public A/AAAA records for pr
 5. Home Assistant VM hardening/backups.
 6. Core apps: Glance, Uptime Kuma, ntfy, Healthchecks.
 7. Observability.
-8. SOPS + Flux after manual manifests are proven.
-9. Stateful apps.
-10. Dev, security, and AI services.
-11. Restore tests.
+8. SOPS + age recovery proof.
+9. Encrypted backup and restore proof.
+10. Flux after manual manifests are proven.
+11. Stateful, dev, security, and AI services.

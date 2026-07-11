@@ -30,3 +30,18 @@ TF_VAR_state_passphrase='<state-passphrase>' tofu -chdir=opentofu/adguard valida
 Outcome: initialization generated both `.terraform.lock.hcl` files with RouterOS provider `1.99.1` and AdGuard provider `1.7.0`; both configurations validated successfully. The first sandboxed initialization attempt could not reach `registry.opentofu.org`, so it was repeated with approved network access.
 
 No `plan`, `import`, or `apply` command has been run. No RouterOS or AdGuard endpoint was contacted.
+
+## Recovery preparation — 2026-07-11
+
+```sh
+ssh -o BatchMode=yes -o ConnectTimeout=5 router '/system identity print'
+strings ~/.local/bin/tofu | rg 'encryption_version|encrypted_data'
+```
+
+Outcome: read-only SSH reached RouterOS; the state-backup helper checks OpenTofu's encrypted envelope fields. No provider connection, state creation, import, plan, or apply occurred.
+
+```sh
+make inventory-router
+```
+
+Outcome: exact lease IDs and public TLS/service state were captured in ignored diagnostics. No RouterOS configuration changed.

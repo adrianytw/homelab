@@ -11,3 +11,5 @@ make ansible-storage
 ```
 
 The target prompts for the sudo/become password through Ansible's `-K` flag.
+
+`make ansible-k3s` is prepared but review-gated. Do not run it until storage is idempotent and `HOST-SUDO`, `HOST-FIREWALL`, and the maintenance window are resolved in `docs/human-review.md`.

@@ -1,6 +1,6 @@
 # RouterOS OpenTofu root
 
-Initial scope is only the two existing DHCP reservations in `leases.tofu`. Before importing, take and review a fresh RouterOS binary backup and export, then obtain explicit approval to configure trusted HTTPS REST access.
+Initial scope is only the two existing DHCP reservations in `leases.tofu`. Before importing, take and review a fresh RouterOS binary backup and export, then obtain explicit approval to configure trusted HTTPS REST access through `www-ssl` on port `443`. `api-ssl` on `8729` is for the separate `apis://` protocol and is not used by this root.
 
 Required environment:
 
@@ -13,3 +13,5 @@ export ROS_CA_CERTIFICATE='/absolute/path/to/routeros-public-ca.pem'
 ```
 
 `ROS_INSECURE` must remain false/unset. See `imports.md`; a successful import is not complete until `tofu plan -detailed-exitcode` returns `0`.
+
+The live certificate change is intentionally deferred. Review `runbooks/routeros-rest-tls-review.md`; never export the CA private key.

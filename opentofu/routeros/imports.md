@@ -3,23 +3,25 @@
 Record the RouterOS ID and successful zero-diff plan for each resource. Never batch these imports.
 
 ```routeros
-:put [/ip/dhcp-server/lease get [find where mac-address=F8:E4:3B:54:E7:03] value-name=.id]
-:put [/ip/dhcp-server/lease get [find where mac-address=52:54:00:D4:BD:37] value-name=.id]
+/ip dhcp-server lease print show-ids detail where mac-address=F8:E4:3B:54:E7:03
+/ip dhcp-server lease print show-ids detail where mac-address=52:54:00:D4:BD:37
 ```
 
 | Resource | RouterOS ID | Imported | Zero-diff plan |
 | --- | --- | --- | --- |
-| `routeros_ip_dhcp_server_lease.nmac` | pending | no | no |
-| `routeros_ip_dhcp_server_lease.home_assistant` | pending | no | no |
+| `routeros_ip_dhcp_server_lease.nmac` | `*1AB0` (verified `2026-07-11`) | no | no |
+| `routeros_ip_dhcp_server_lease.home_assistant` | `*1AB7` (verified `2026-07-11`) | no | no |
 
 For each row, substitute the reviewed ID and run:
 
 ```sh
-tofu import routeros_ip_dhcp_server_lease.nmac '*ID'
-tofu plan -detailed-exitcode
+tofu -chdir=opentofu/routeros import routeros_ip_dhcp_server_lease.nmac '*ID'
+tofu -chdir=opentofu/routeros plan -detailed-exitcode
+make backup-opentofu STACK=routeros
 
-tofu import routeros_ip_dhcp_server_lease.home_assistant '*ID'
-tofu plan -detailed-exitcode
+tofu -chdir=opentofu/routeros import routeros_ip_dhcp_server_lease.home_assistant '*ID'
+tofu -chdir=opentofu/routeros plan -detailed-exitcode
+make backup-opentofu STACK=routeros
 ```
 
 Exit `0` is required. Exit `2` means the declaration must be corrected from observed state before continuing; do not apply it.
