@@ -34,8 +34,8 @@ OpenTofu, host preparation, and recovery may progress independently. Device chan
 - [x] Document the goal, current state, dependency graph, and delivery checklist.
 - [x] Forbid `*.nairdev.com`; use exact names or verified homelab-only subzones.
 - [x] Treat `adguard.nairdev.com` routing as unverified until an HTTPS UI path is proven.
-- [ ] Commit only intentional homelab files, excluding unrelated `.codex` tooling.
-- [ ] Run checks and a secret scan, create the baseline commit, push `origin`, and create `~/homelab-backups/git/homelab.git`.
+- [x] Commit only intentional homelab files, excluding unrelated `.codex` tooling.
+- [x] Run checks and a secret scan, create the baseline commit, push `origin`, and create `~/homelab-backups/git/homelab.git`.
 
 ### OpenTofu first
 

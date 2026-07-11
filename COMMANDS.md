@@ -19,3 +19,16 @@ git diff --check
 Outcome: repository checks and the plaintext-secret signature scan passed after the OpenTofu files were added. The existing staged `.codex` files remain separate from the homelab work.
 
 See `opentofu/COMMANDS.md` for OpenTofu installation, initialization, and validation.
+
+## 2026-07-11
+
+```sh
+git add AGENTS.md .gitignore COMMANDS.md Makefile README.md ansible apps cluster diagnostics docs opentofu runbooks scripts secrets
+git diff --cached --check
+git commit --only -m "chore: establish homelab baseline" -- AGENTS.md .gitignore COMMANDS.md Makefile README.md ansible apps cluster diagnostics docs opentofu runbooks scripts secrets
+mkdir -p ~/homelab-backups/git
+git clone --mirror /home/nairda/homelab ~/homelab-backups/git/homelab.git
+git push -u origin main
+```
+
+Outcome: baseline commit `3afc09a` was pushed to `origin/main`; the bare off-repository mirror was created. The `.codex` tooling remained staged but excluded from the commit.
