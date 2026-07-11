@@ -58,3 +58,16 @@ git -C ~/homelab-backups/git/homelab.git remote update
 ```
 
 Outcome: local commits `4ca1517` and `9800d52` were created and mirrored. `origin/main` was not pushed.
+
+## Bridge and k3s proof preparation — 2026-07-11
+
+```sh
+graphify query "What files and runbooks cover nmac networking, Home Assistant libvirt networking, host firewall, k3s installation, task tracking, and human review blockers?"
+rg --files README.md docs runbooks ansible opentofu scripts Makefile | sort
+git status --short
+make check
+git diff --check
+rg -n --hidden --glob '!.git/**' --glob '!graphify-out/**' '(plaintext-secret-signatures)' README.md docs runbooks ansible opentofu cluster scripts Makefile
+```
+
+Outcome: fresh read-only host evidence was recorded, two review-gated execution packets were added, repository checks passed, and the secret scan found only variable references and documented placeholders. No live infrastructure change or GitHub push occurred.

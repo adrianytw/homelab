@@ -62,11 +62,14 @@ Do not change these without a fresh RouterOS backup/export and explicit apply co
 | Ports `80`/`443`/`6443` | no listeners |
 | SELinux | enforcing |
 | Active NetworkManager profile | `Wired connection 2` on `enu1u1c2` |
+| NetworkManager profile UUID | `2c145c77-880e-36a9-a419-55d1df2f951e` |
+| Host interface MAC | `F8:E4:3B:54:E7:03` |
+| Addressing method | NetworkManager DHCP (`ipv4.method auto`) |
 | Default route / DNS | `192.168.88.1` / `192.168.88.1` |
 | Non-interactive sudo | unavailable |
 | Cockpit socket | enabled/active |
 | libvirt VM | `haos` running |
-| Firewalld active zone | last known `FedoraWorkstation` on `enu1u1c2`; fresh privileged inventory blocked |
+| Firewalld | enabled and active; current zone/rules require privilege and remain blocked |
 
 ## Home Assistant VM
 

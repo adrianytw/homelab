@@ -16,11 +16,12 @@ Updated `2026-07-11`. A blocked task stops only its lane; see `human-review.md` 
 | HOST-INVENTORY | host | done | Fresh read-only inventory recorded; per-command timeout and SSH connection reuse prevent hangs. |
 | HOST-STORAGE | host | blocked | Playbook will cover only current directories; apply waits on `HOST-SUDO`. |
 | HA-BACKUP | recovery | blocked | Procedure can be documented; live backup needs downtime, sudo, and age custody. |
-| HA-BRIDGE | recovery | blocked | Requires local console maintenance window and observed NetworkManager profiles. |
+| HA-BRIDGE | recovery | blocked | Exact observed-profile migration and rollback packet is prepared; requires local console, sudo, XML verification, and approval. |
 | SECRETS-TOOLS | recovery | blocked | Package candidates verified; installation waits on `LOCAL-SUDO`. Do not generate a private key. |
 | SECRETS-BOOTSTRAP | recovery | blocked | Requires `AGE-CUSTODY`. |
 | K3S-AUTOMATION | cluster | done | Pinned `v1.36.2+k3s1` playbook and digest-pinned test workload prepared; not applied. |
-| K3S-PROOF | cluster | blocked | Requires storage, sudo, firewall review, and maintenance window. |
+| K3S-FIREWALL-PACKET | cluster | done | Privileged inventory, decision gates, validation, and rollback are documented; no firewall change ran. |
+| K3S-PROOF | cluster | blocked | Execution packet is prepared; requires storage, sudo, privileged firewall review, and maintenance window. |
 | DNS-TLS-PROOF | network | blocked | Requires k3s proof, AdGuard import, Cloudflare token, and separate DNS approval. |
 | CORE-APPS | apps | blocked | Requires restore proof; no speculative manifests. |
 | FLUX | GitOps | blocked | Requires manual manifests, SOPS recovery, restart proof, restore proof, and auth decision. |

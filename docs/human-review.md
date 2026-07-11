@@ -6,11 +6,11 @@ Nothing here blocks unrelated lanes. Resolve an item by recording the decision a
 | --- | --- | --- | --- |
 | LOCAL-SUDO | Provide an attended sudo window for approved workstation packages. | `sudo -n` fails on the current Ubuntu computer. | System installation of age, SOPS dependencies, DNS, and qemu tools. |
 | HOST-SUDO | Provide an attended sudo window or secure Ansible become mechanism. | SSH key works; `sudo -n` fails on `nmac`. | Storage and k3s applies, privileged host inventory. |
-| HOST-FIREWALL | Review privileged firewalld inventory and map LAN/WireGuard sources before changing rules. | Prior inventory was incomplete and showed broad high-port access. | k3s exposure and persistent firewall rules. |
+| HOST-FIREWALL | Run and review the privileged inventory in `runbooks/k3s-firewall-proof.md`; map the active interface/bridge zone and confirm how WireGuard sources arrive before choosing rules. | Firewalld is enabled/active; unprivileged rule inventory is denied. Prior inventory showed broad high-port access. | k3s exposure and persistent firewall rules. |
 | HOST-REBOOT | Approve a maintenance reboot after k3s and firewall validation. | No unattended reboot is authorized. | Reboot recovery acceptance. |
 | HOST-POWER | Confirm lid-closed usage and desired suspend/hibernate policy. | Current policy has not been captured with privilege. | Power-management automation. |
 | HA-BACKUP | Approve graceful HA downtime for a consistent qcow2 backup. | VM is running/autostarted at `.84`; force-destroy is forbidden. | HA recovery artifact. |
-| HA-BRIDGE | Schedule local-console migration from macvtap to NetworkManager `br0`. | macvtap prevents host-to-guest reachability. | `nmac` reaching HA without RouterOS changes. |
+| HA-BRIDGE | Review `runbooks/home-assistant-bridge-migration.md` and schedule its local-console window. | Active profile is DHCP UUID `2c145c77-880e-36a9-a419-55d1df2f951e`; host MAC `F8:E4:3B:54:E7:03`; macvtap is present. Inactive XML still needs privileged preflight verification. | `nmac` reaching HA without RouterOS changes. |
 | DATA-ENCRYPTION | Accept that live `/srv/data` is unencrypted and only off-host copies are encrypted. | Full-disk/data encryption is outside the current build. | Recorded risk acceptance. |
 | AGE-CUSTODY | Choose an independent place for the recovery-bundle passphrase. | SOPS + age selected; key generation is intentionally deferred. | age identity, `.sops.yaml`, encrypted secrets, Flux. |
 | ROS-BACKUP | Make `ROUTEROS_BACKUP_PASSWORD` available for a fresh encrypted backup. | Latest backup is `2026-06-27`, stale for new changes. | RouterOS TLS/import work. |
