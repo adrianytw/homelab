@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ntfy-data
+  namespace: core
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: local-path
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntfy
+  namespace: core
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ntfy
+  template:
+    metadata:
+      labels:
+        app: ntfy
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 65534
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ntfy
+          image: docker.io/binwiederhier/ntfy@sha256:2a4ccdf5378de97f2756fdfa7c91d884fe243251ec6d2b826e90df62cf0edd01
+          args: [serve]
+          env:
+            - {name: NTFY_LISTEN_HTTP, value: ":8080"}
+            - {name: NTFY_BASE_URL, value: "https://notify.nairdev.com"}
+            - {name: NTFY_BEHIND_PROXY, value: "true"}
+            - {name: NTFY_CACHE_FILE, value: "/var/lib/ntfy/cache.db"}
+            - {name: NTFY_AUTH_FILE, value: "/var/lib/ntfy/auth.db"}
+            - {name: NTFY_AUTH_DEFAULT_ACCESS, value: "deny-all"}
+            - {name: NTFY_ENABLE_LOGIN, value: "true"}
+            - name: NTFY_AUTH_USERS
+              valueFrom:
+                secretKeyRef:
+                  name: ntfy-admin
+                  key: auth-users
+          ports:
+            - {name: http, containerPort: 8080}
+          startupProbe:
+            httpGet: {path: /v1/health, port: http}
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /v1/health, port: http}
+          livenessProbe:
+            httpGet: {path: /v1/health, port: http}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            runAsNonRoot: true
+            runAsUser: 65534
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/ntfy}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: ntfy-data}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ntfy, namespace: core}
+spec:
+  selector: {app: ntfy}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: {name: ntfy, namespace: core}
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [notify.nairdev.com]
+      secretName: notify-nairdev-tls
+  rules:
+    - host: notify.nairdev.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ntfy
+                port: {name: http}

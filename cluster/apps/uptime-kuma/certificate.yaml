@@ -1,0 +1,16 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: status-nairdev
+  namespace: core
+spec:
+  dnsNames:
+    - status.nairdev.com
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: letsencrypt-production
+  privateKey:
+    rotationPolicy: Always
+  secretName: status-nairdev-tls

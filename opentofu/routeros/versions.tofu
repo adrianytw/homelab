@@ -9,4 +9,19 @@ terraform {
   }
 }
 
-provider "routeros" {}
+variable "routeros_username" {
+  type = string
+}
+
+variable "routeros_password" {
+  type      = string
+  sensitive = true
+}
+
+provider "routeros" {
+  hosturl        = "https://192.168.88.1:8443"
+  username       = var.routeros_username
+  password       = var.routeros_password
+  ca_certificate = "${path.module}/homelab-router-ca.crt"
+  insecure       = false
+}

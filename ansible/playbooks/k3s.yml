@@ -9,8 +9,8 @@
   tasks:
     - name: Require ARM64 host
       ansible.builtin.assert:
-        that: ansible_architecture == "aarch64"
-        fail_msg: "k3s playbook is pinned for nmac ARM64, found {{ ansible_architecture }}"
+        that: ansible_facts.architecture == "aarch64"
+        fail_msg: "k3s playbook is pinned for nmac ARM64, found {{ ansible_facts.architecture }}"
 
     - name: Check k3s storage path
       ansible.builtin.stat:
@@ -38,6 +38,7 @@
         mode: "0600"
         content: |
           write-kubeconfig-mode: "0600"
+          secrets-encryption: true
           default-local-storage-path: /srv/data/k3s-storage
           tls-san:
             - "192.168.88.20"

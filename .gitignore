@@ -1,6 +1,9 @@
 # Generated knowledge graph
 graphify-out/
 
+# Repository-local downloaded tools
+.tools/
+
 # Inventory output
 diagnostics/*
 !diagnostics/.gitkeep
@@ -17,6 +20,7 @@ crash.*.log
 # Secrets and local bootstrap values
 .env
 .env.*
+secrets/sops/bootstrap.enc.yaml
 *.kubeconfig
 kubeconfig*
 secrets/age/*

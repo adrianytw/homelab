@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: core
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: glance
+  namespace: core
+data:
+  glance.yml: |
+    server:
+      proxied: true
+      assets-path: /app/assets
+    theme:
+      background-color: 240 8 9
+      primary-color: 43 50 70
+      contrast-multiplier: 1.1
+    pages:
+      - name: Home
+        columns:
+          - size: full
+            widgets:
+              - type: search
+                search-engine: google
+              - type: bookmarks
+                groups:
+                  - title: Homelab
+                    links:
+                      - title: Router
+                        url: https://router.nairdev.com
+                      - title: AdGuard
+                        url: https://adguard.nairdev.com
+                      - title: Test workload
+                        url: https://test.k8s.nairdev.com
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: glance-assets
+  namespace: core
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 256Mi
+  storageClassName: local-path
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glance
+  namespace: core
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: glance
+  template:
+    metadata:
+      labels:
+        app: glance
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 65534
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: glance
+          image: docker.io/glanceapp/glance@sha256:ab7ddd51269063b7ec5031e888cccf0f8381fba3245ff5e94f1deb155ca0775d
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+            - name: assets
+              mountPath: /app/assets
+      volumes:
+        - name: config
+          configMap:
+            name: glance
+        - name: assets
+          persistentVolumeClaim:
+            claimName: glance-assets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: glance
+  namespace: core
+spec:
+  selector:
+    app: glance
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: glance
+  namespace: core
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - home.nairdev.com
+      secretName: home-nairdev-tls
+  rules:
+    - host: home.nairdev.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: glance
+                port:
+                  name: http

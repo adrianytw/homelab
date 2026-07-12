@@ -1,2 +1,3 @@
 ---
+- import_playbook: host.yml
 - import_playbook: storage.yml

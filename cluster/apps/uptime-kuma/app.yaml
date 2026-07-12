@@ -1,53 +1,61 @@
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: homelab-test
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: web-data
-  namespace: homelab-test
+  name: uptime-kuma-data
+  namespace: core
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 16Mi
+      storage: 5Gi
   storageClassName: local-path
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web
-  namespace: homelab-test
+  name: uptime-kuma
+  namespace: core
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
-      app: web
+      app: uptime-kuma
   template:
     metadata:
       labels:
-        app: web
+        app: uptime-kuma
     spec:
       automountServiceAccountToken: false
       securityContext:
-        fsGroup: 65534
+        fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: web
-          image: busybox@sha256:9532d8c39891ca2ecde4d30d7710e01fb739c87a8b9299685c63704296b16028
-          command:
-            - sh
-            - -c
-            - test -f /data/index.html || printf 'homelab test workload\n' >/data/index.html; exec httpd -f -p 8080 -h /data
+        - name: uptime-kuma
+          image: docker.io/louislam/uptime-kuma@sha256:775df4fa787d0e77bdbd27c801a154ac578340fa8f70b14f039a1dfc5f3bbfda
+          env:
+            - name: UPTIME_KUMA_DB_TYPE
+              value: sqlite
+            - name: UPTIME_KUMA_SQLITE_SINGLE_CONNECTION
+              value: "true"
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 3001
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
           readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          livenessProbe:
             httpGet:
               path: /
               port: http
@@ -56,25 +64,24 @@ spec:
             capabilities:
               drop:
                 - ALL
-            readOnlyRootFilesystem: true
             runAsNonRoot: true
-            runAsUser: 65534
+            runAsUser: 1000
           volumeMounts:
             - name: data
-              mountPath: /data
+              mountPath: /app/data
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: web-data
+            claimName: uptime-kuma-data
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: web
-  namespace: homelab-test
+  name: uptime-kuma
+  namespace: core
 spec:
   selector:
-    app: web
+    app: uptime-kuma
   ports:
     - name: http
       port: 80
@@ -83,22 +90,22 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: web
-  namespace: homelab-test
+  name: uptime-kuma
+  namespace: core
 spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - test.k8s.nairdev.com
-      secretName: test-k8s-tls
+        - status.nairdev.com
+      secretName: status-nairdev-tls
   rules:
-    - host: test.k8s.nairdev.com
+    - host: status.nairdev.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: web
+                name: uptime-kuma
                 port:
                   name: http

@@ -1,0 +1,110 @@
+---
+- name: Prepare nmac for unattended homelab service
+  hosts: macbook
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Require the expected Fedora ARM64 host
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == "Fedora"
+          - ansible_facts.architecture == "aarch64"
+
+    - name: Install current k3s host requirements
+      ansible.builtin.dnf:
+        name:
+          - container-selinux
+          - curl
+          - iptables
+          - policycoreutils-python-utils
+        state: present
+
+    - name: Keep remote administration available
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      loop:
+        - sshd
+        - cockpit.socket
+        - firewalld
+
+    - name: Disable sleep and hibernation targets
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        masked: true
+      loop:
+        - sleep.target
+        - suspend.target
+        - hibernate.target
+        - hybrid-sleep.target
+
+    - name: Create logind override directory
+      ansible.builtin.file:
+        path: /etc/systemd/logind.conf.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Ignore lid closure while serving workloads
+      ansible.builtin.copy:
+        dest: /etc/systemd/logind.conf.d/homelab.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Login]
+          HandleLidSwitch=ignore
+          HandleLidSwitchExternalPower=ignore
+          HandleLidSwitchDocked=ignore
+      notify: Restart systemd-logind
+
+    - name: Trust k3s pod and service networks
+      ansible.builtin.shell: >-
+        firewall-cmd --permanent --zone=trusted --query-source={{ item }} ||
+        firewall-cmd --permanent --zone=trusted --add-source={{ item }}
+      loop:
+        - 10.42.0.0/16
+        - 10.43.0.0/16
+      register: trusted_sources
+      changed_when: "'success' in trusted_sources.stdout"
+      notify: Reload firewalld
+
+    - name: Restrict k3s listeners to LAN and WireGuard
+      ansible.builtin.shell: >-
+        firewall-cmd --permanent --zone=FedoraWorkstation
+        --query-rich-rule='{{ item }}' ||
+        firewall-cmd --permanent --zone=FedoraWorkstation
+        --add-rich-rule='{{ item }}'
+      loop:
+        - rule family=ipv4 source address=192.168.88.0/24 port port=80 protocol=tcp accept
+        - rule family=ipv4 source address=192.168.88.0/24 port port=443 protocol=tcp accept
+        - rule family=ipv4 source address=192.168.88.0/24 port port=6443 protocol=tcp accept
+        - rule family=ipv4 source address=192.168.36.0/24 port port=80 protocol=tcp accept
+        - rule family=ipv4 source address=192.168.36.0/24 port port=443 protocol=tcp accept
+        - rule family=ipv4 source address=192.168.36.0/24 port port=6443 protocol=tcp accept
+      register: k3s_rules
+      changed_when: "'success' in k3s_rules.stdout"
+      notify: Reload firewalld
+
+    - name: Remove Fedora's broad high-port openings
+      ansible.builtin.shell: >-
+        (firewall-cmd --permanent --zone=FedoraWorkstation --query-port={{ item }} &&
+        firewall-cmd --permanent --zone=FedoraWorkstation --remove-port={{ item }}) || true
+      loop:
+        - 1025-65535/tcp
+        - 1025-65535/udp
+      register: broad_ports
+      changed_when: "'success' in broad_ports.stdout"
+      notify: Reload firewalld
+
+  handlers:
+    - name: Restart systemd-logind
+      ansible.builtin.systemd_service:
+        name: systemd-logind
+        state: restarted
+
+    - name: Reload firewalld
+      ansible.builtin.command: firewall-cmd --reload
+      changed_when: true

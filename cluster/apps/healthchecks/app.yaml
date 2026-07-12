@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: healthchecks-data, namespace: core}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 2Gi}}
+  storageClassName: local-path
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: healthchecks, namespace: core}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: healthchecks}}
+  template:
+    metadata: {labels: {app: healthchecks}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: healthchecks
+          image: docker.io/healthchecks/healthchecks@sha256:7cdc4e61a775c82d886703c953bfdccbca9db3ab39f6c4583d39662f3947e1a9
+          env:
+            - {name: SITE_ROOT, value: "https://health.ops.nairdev.com"}
+            - {name: ALLOWED_HOSTS, value: "health.ops.nairdev.com"}
+            - {name: DB_NAME, value: "/data/hc.sqlite"}
+            - {name: DEBUG, value: "False"}
+            - {name: UWSGI_PROCESSES, value: "2"}
+            - name: SECRET_KEY
+              valueFrom: {secretKeyRef: {name: healthchecks-admin, key: secret-key}}
+          ports:
+            - {name: http, containerPort: 8000}
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+              httpHeaders: [{name: Host, value: health.ops.nairdev.com}]
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+              httpHeaders: [{name: Host, value: health.ops.nairdev.com}]
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+              httpHeaders: [{name: Host, value: health.ops.nairdev.com}]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            runAsNonRoot: true
+            runAsUser: 999
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: healthchecks-data}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: healthchecks, namespace: core}
+spec:
+  selector: {app: healthchecks}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: {name: healthchecks, namespace: core}
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [health.ops.nairdev.com]
+      secretName: health-ops-nairdev-tls
+  rules:
+    - host: health.ops.nairdev.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: healthchecks, port: {name: http}}

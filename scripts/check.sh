@@ -52,6 +52,7 @@ if command -v tofu >/dev/null; then
 fi
 
 if command -v ansible-playbook >/dev/null; then
+  ansible-playbook -i ansible/inventory/homelab.ini ansible/playbooks/bootstrap.yml --syntax-check
   ansible-playbook -i ansible/inventory/homelab.ini ansible/playbooks/storage.yml --syntax-check
   ansible-playbook -i ansible/inventory/homelab.ini ansible/playbooks/k3s.yml --syntax-check
 fi

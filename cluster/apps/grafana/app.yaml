@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: grafana-datasources, namespace: core}
+data:
+  prometheus.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus.core.svc.cluster.local
+        isDefault: true
+        editable: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: grafana-data, namespace: core}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 5Gi}}
+  storageClassName: local-path
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: grafana, namespace: core}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: grafana}}
+  template:
+    metadata: {labels: {app: grafana}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {fsGroup: 472, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: grafana
+          image: docker.io/grafana/grafana@sha256:38f965141ed8cae9ee6fcafbc4f7ee8112439fd55eaf37fecf6d8237f87c6b85
+          env:
+            - {name: GF_SERVER_ROOT_URL, value: "https://grafana.nairdev.com"}
+            - {name: GF_USERS_ALLOW_SIGN_UP, value: "false"}
+            - {name: GF_AUTH_ANONYMOUS_ENABLED, value: "false"}
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom: {secretKeyRef: {name: grafana-admin, key: username}}
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom: {secretKeyRef: {name: grafana-admin, key: password}}
+          ports: [{name: http, containerPort: 3000}]
+          startupProbe: {httpGet: {path: /api/health, port: http}, failureThreshold: 30, periodSeconds: 10}
+          readinessProbe: {httpGet: {path: /api/health, port: http}}
+          livenessProbe: {httpGet: {path: /api/health, port: http}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            runAsNonRoot: true
+            runAsUser: 472
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/grafana}
+            - {name: datasources, mountPath: /etc/grafana/provisioning/datasources, readOnly: true}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: grafana-data}
+        - name: datasources
+          configMap: {name: grafana-datasources}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: grafana, namespace: core}
+spec:
+  selector: {app: grafana}
+  ports: [{name: http, port: 80, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: {name: grafana, namespace: core}
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [grafana.nairdev.com]
+      secretName: grafana-nairdev-tls
+  rules:
+    - host: grafana.nairdev.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: grafana, port: {name: http}}}
