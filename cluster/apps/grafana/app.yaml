@@ -6,7 +6,6 @@ data:
     apiVersion: 1
     datasources:
       - name: Prometheus
-        uid: prometheus
         type: prometheus
         access: proxy
         url: http://prometheus.core.svc.cluster.local
@@ -28,12 +27,12 @@ data:
         options: {path: /var/lib/grafana-dashboards}
   nmac.json: |
     {"annotations":{"list":[]},"editable":false,"panels":[
-      {"type":"stat","title":"Targets up","gridPos":{"h":8,"w":6,"x":0,"y":0},"datasource":{"type":"prometheus","uid":"prometheus"},"targets":[{"expr":"sum(up)","refId":"A"}]},
-      {"type":"gauge","title":"CPU used","gridPos":{"h":8,"w":6,"x":6,"y":0},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100}},"datasource":{"type":"prometheus","uid":"prometheus"},"targets":[{"expr":"100 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100","refId":"A"}]},
-      {"type":"gauge","title":"Memory used","gridPos":{"h":8,"w":6,"x":12,"y":0},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100}},"datasource":{"type":"prometheus","uid":"prometheus"},"targets":[{"expr":"(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100","refId":"A"}]},
-      {"type":"gauge","title":"Root disk used","gridPos":{"h":8,"w":6,"x":18,"y":0},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100}},"datasource":{"type":"prometheus","uid":"prometheus"},"targets":[{"expr":"(1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"}) * 100","refId":"A"}]},
-      {"type":"timeseries","title":"CPU usage","gridPos":{"h":9,"w":12,"x":0,"y":8},"fieldConfig":{"defaults":{"unit":"percent"}},"datasource":{"type":"prometheus","uid":"prometheus"},"targets":[{"expr":"100 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100","refId":"A"}]},
-      {"type":"timeseries","title":"Available memory","gridPos":{"h":9,"w":12,"x":12,"y":8},"fieldConfig":{"defaults":{"unit":"bytes"}},"datasource":{"type":"prometheus","uid":"prometheus"},"targets":[{"expr":"node_memory_MemAvailable_bytes","refId":"A"}]}
+      {"type":"stat","title":"Targets up","gridPos":{"h":8,"w":6,"x":0,"y":0},"datasource":"Prometheus","targets":[{"expr":"sum(up)","refId":"A"}]},
+      {"type":"gauge","title":"CPU used","gridPos":{"h":8,"w":6,"x":6,"y":0},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100}},"datasource":"Prometheus","targets":[{"expr":"100 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100","refId":"A"}]},
+      {"type":"gauge","title":"Memory used","gridPos":{"h":8,"w":6,"x":12,"y":0},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100}},"datasource":"Prometheus","targets":[{"expr":"(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100","refId":"A"}]},
+      {"type":"gauge","title":"Root disk used","gridPos":{"h":8,"w":6,"x":18,"y":0},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100}},"datasource":"Prometheus","targets":[{"expr":"(1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"}) * 100","refId":"A"}]},
+      {"type":"timeseries","title":"CPU usage","gridPos":{"h":9,"w":12,"x":0,"y":8},"fieldConfig":{"defaults":{"unit":"percent"}},"datasource":"Prometheus","targets":[{"expr":"100 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100","refId":"A"}]},
+      {"type":"timeseries","title":"Available memory","gridPos":{"h":9,"w":12,"x":12,"y":8},"fieldConfig":{"defaults":{"unit":"bytes"}},"datasource":"Prometheus","targets":[{"expr":"node_memory_MemAvailable_bytes","refId":"A"}]}
     ],"refresh":"30s","schemaVersion":41,"tags":["homelab"],"templating":{"list":[]},"time":{"from":"now-6h","to":"now"},"title":"nmac overview","uid":"nmac-overview","version":1}
 ---
 apiVersion: v1
