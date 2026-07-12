@@ -5,6 +5,7 @@ metadata:
   name: glance
   namespace: flux-system
 spec:
+  dependsOn: [{name: ingress}]
   interval: 10m
   path: ./cluster/apps/glance
   prune: true
