@@ -5,10 +5,78 @@ data:
   prometheus.yml: |
     global:
       scrape_interval: 30s
+      evaluation_interval: 30s
+    rule_files:
+      - /etc/prometheus/rules/*.yaml
     scrape_configs:
       - job_name: prometheus
         static_configs:
           - targets: [localhost:9090]
+      - job_name: nmac
+        static_configs:
+          - targets: [node-exporter.core.svc.cluster.local:9100]
+  alerts.yaml: |
+    groups:
+      - name: homelab
+        rules:
+          - alert: MonitoringTargetDown
+            expr: up == 0
+            for: 2m
+            labels: {severity: critical}
+            annotations: {summary: "{{ $labels.job }} monitoring target is down"}
+          - alert: NmacDiskSpaceLow
+            expr: node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} < 0.15
+            for: 10m
+            labels: {severity: warning}
+            annotations: {summary: nmac root filesystem has less than 15% free space}
+          - alert: NmacMemoryLow
+            expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
+            for: 10m
+            labels: {severity: warning}
+            annotations: {summary: nmac has less than 10% available memory}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata: {name: node-exporter, namespace: core}
+spec:
+  selector: {matchLabels: {app: node-exporter}}
+  template:
+    metadata: {labels: {app: node-exporter}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: node-exporter
+          image: docker.io/prom/node-exporter@sha256:e9cff4fc67b1818f8c97adb115b9f12c9a54b533de86765d4a0effc01b357205
+          args:
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+            - --path.rootfs=/host/root
+            - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/kubelet/pods/.+|var/lib/containers/storage/.+)($|/)
+          ports: [{name: metrics, containerPort: 9100}]
+          readinessProbe: {httpGet: {path: /metrics, port: metrics}}
+          livenessProbe: {httpGet: {path: /metrics, port: metrics}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+          volumeMounts:
+            - {name: proc, mountPath: /host/proc, readOnly: true}
+            - {name: sys, mountPath: /host/sys, readOnly: true}
+            - {name: root, mountPath: /host/root, readOnly: true, mountPropagation: HostToContainer}
+      volumes:
+        - {name: proc, hostPath: {path: /proc}}
+        - {name: sys, hostPath: {path: /sys}}
+        - {name: root, hostPath: {path: /}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: node-exporter, namespace: core}
+spec:
+  selector: {app: node-exporter}
+  ports: [{name: metrics, port: 9100, targetPort: metrics}]
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -26,7 +94,9 @@ spec:
   strategy: {type: Recreate}
   selector: {matchLabels: {app: prometheus}}
   template:
-    metadata: {labels: {app: prometheus}}
+    metadata:
+      labels: {app: prometheus}
+      annotations: {homelab.nairdev.com/config-revision: "2"}
     spec:
       automountServiceAccountToken: false
       securityContext: {fsGroup: 65532, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
@@ -50,10 +120,17 @@ spec:
             runAsUser: 65532
           volumeMounts:
             - {name: config, mountPath: /etc/prometheus, readOnly: true}
+            - {name: rules, mountPath: /etc/prometheus/rules, readOnly: true}
             - {name: data, mountPath: /prometheus}
       volumes:
         - name: config
-          configMap: {name: prometheus}
+          configMap:
+            name: prometheus
+            items: [{key: prometheus.yml, path: prometheus.yml}]
+        - name: rules
+          configMap:
+            name: prometheus
+            items: [{key: alerts.yaml, path: alerts.yaml}]
         - name: data
           persistentVolumeClaim: {claimName: prometheus-data}
 ---

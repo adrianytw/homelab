@@ -109,3 +109,76 @@ spec:
                 name: uptime-kuma
                 port:
                   name: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: uptime-kuma-monitor-setup, namespace: core}
+data:
+  configure.js: |
+    const { io } = require("socket.io-client");
+    const wanted = [
+      ["Glance", "https://home.nairdev.com"],
+      ["Uptime Kuma", "https://status.nairdev.com"],
+      ["ntfy", "https://notify.nairdev.com/v1/health"],
+      ["Healthchecks", "https://health.ops.nairdev.com"],
+      ["Prometheus", "https://prom.ops.nairdev.com/-/ready"],
+      ["Grafana", "https://grafana.nairdev.com/api/health"],
+      ["Home Assistant", "http://192.168.88.84:8123"]
+    ];
+    const socket = io(process.env.KUMA_URL, { transports: ["websocket"] });
+    const emit = (event, ...args) => new Promise((resolve, reject) =>
+      socket.emit(event, ...args, (result) => result?.ok ? resolve(result) : reject(new Error(result?.msg || `${event} failed`))));
+    (async () => {
+      await new Promise((resolve, reject) => {
+        socket.once("connect", resolve);
+        socket.once("connect_error", reject);
+      });
+      await emit("login", {username: process.env.KUMA_USERNAME, password: process.env.KUMA_PASSWORD});
+      const listPromise = new Promise((resolve) => socket.once("monitorList", resolve));
+      await emit("getMonitorList");
+      const existing = Object.values(await listPromise);
+      for (const [name, url] of wanted) {
+        if (existing.some((monitor) => monitor.name === name)) continue;
+        await emit("add", {
+          type: "http", name, url, method: "GET", interval: 60,
+          retryInterval: 30, maxretries: 2, resendInterval: 0,
+          notificationIDList: {}, accepted_statuscodes: ["200-399"],
+          ignoreTls: false, expiryNotification: true,
+          domainExpiryNotification: false, maxredirects: 10,
+          kafkaProducerBrokers: [], kafkaProducerSaslOptions: {},
+          rabbitmqNodes: [], conditions: []
+        });
+        console.log(`configured ${name}`);
+      }
+      socket.close();
+    })().catch((error) => { console.error(error.message); socket.close(); process.exit(1); });
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: uptime-kuma-monitor-setup-v1, namespace: core}
+spec:
+  backoffLimit: 4
+  template:
+    metadata: {labels: {app: uptime-kuma-monitor-setup}}
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext: {seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: configure
+          image: docker.io/louislam/uptime-kuma@sha256:775df4fa787d0e77bdbd27c801a154ac578340fa8f70b14f039a1dfc5f3bbfda
+          command: [node, /config/configure.js]
+          env:
+            - {name: NODE_PATH, value: /app/node_modules}
+            - {name: KUMA_URL, value: "http://uptime-kuma.core.svc.cluster.local"}
+            - name: KUMA_USERNAME
+              valueFrom: {secretKeyRef: {name: uptime-kuma-admin, key: username}}
+            - name: KUMA_PASSWORD
+              valueFrom: {secretKeyRef: {name: uptime-kuma-admin, key: password}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            runAsNonRoot: true
+            runAsUser: 1000
+          volumeMounts: [{name: config, mountPath: /config, readOnly: true}]
+      volumes: [{name: config, configMap: {name: uptime-kuma-monitor-setup}}]

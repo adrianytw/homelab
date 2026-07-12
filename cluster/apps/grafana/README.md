@@ -1,4 +1,5 @@
 # Grafana
 
 Internal dashboard at `https://grafana.nairdev.com`, with anonymous access and
-sign-up disabled and the Prometheus datasource provisioned read-only.
+sign-up disabled. The Prometheus datasource and `nmac overview` dashboard are
+provisioned read-only.
