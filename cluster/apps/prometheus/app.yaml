@@ -60,6 +60,31 @@ data:
             for: 15m
             labels: {severity: warning}
             annotations: {summary: nmac CPU usage has exceeded 90% for 15 minutes}
+          - alert: RouterCpuHigh
+            expr: avg(hrProcessorLoad{job="router"}) > 90
+            for: 15m
+            labels: {severity: warning}
+            annotations: {summary: RouterOS CPU usage has exceeded 90% for 15 minutes}
+          - alert: RouterMemoryLow
+            expr: (hrStorageSize{job="router",hrStorageDescr="main memory"} - hrStorageUsed{job="router",hrStorageDescr="main memory"}) / hrStorageSize{job="router",hrStorageDescr="main memory"} < 0.15
+            for: 10m
+            labels: {severity: warning}
+            annotations: {summary: RouterOS has less than 15% free memory}
+          - alert: RouterFlashLow
+            expr: (hrStorageSize{job="router",hrStorageDescr="system disk"} - hrStorageUsed{job="router",hrStorageDescr="system disk"}) / hrStorageSize{job="router",hrStorageDescr="system disk"} < 0.15
+            for: 10m
+            labels: {severity: warning}
+            annotations: {summary: RouterOS has less than 15% free system flash}
+          - alert: RouterUsbSpaceLow
+            expr: (hrStorageSize{job="router",hrStorageDescr=~"disk: USB FLASH DRIVE.*@.*"} - hrStorageUsed{job="router",hrStorageDescr=~"disk: USB FLASH DRIVE.*@.*"}) / hrStorageSize{job="router",hrStorageDescr=~"disk: USB FLASH DRIVE.*@.*"} < 0.15
+            for: 10m
+            labels: {severity: warning}
+            annotations: {summary: RouterOS AdGuard USB storage has less than 15% free space}
+          - alert: RouterTemperatureHigh
+            expr: mtxrGaugeValue{job="router",mtxrGaugeName="cpu-temperature"} > 75
+            for: 10m
+            labels: {severity: warning}
+            annotations: {summary: RouterOS CPU temperature has exceeded 75 C for 10 minutes}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -336,7 +361,7 @@ spec:
   template:
     metadata:
       labels: {app: prometheus}
-      annotations: {homelab.nairdev.com/config-revision: "6"}
+      annotations: {homelab.nairdev.com/config-revision: "7"}
     spec:
       automountServiceAccountToken: false
       securityContext: {fsGroup: 65532, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
