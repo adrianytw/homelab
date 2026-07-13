@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${ROUTEROS_BACKUP_PASSWORD:?set ROUTEROS_BACKUP_PASSWORD in your shell; do not commit it}"
+unencrypted="${ROUTEROS_BACKUP_UNENCRYPTED:-0}"
+if [[ "$unencrypted" != 1 ]]; then
+  : "${ROUTEROS_BACKUP_PASSWORD:?set ROUTEROS_BACKUP_PASSWORD or explicitly set ROUTEROS_BACKUP_UNENCRYPTED=1}"
+fi
 
 router="${ROUTEROS_HOST:-router}"
 ts="${BACKUP_TIMESTAMP:-$(date -u +%Y%m%dT%H%M%SZ)}"
@@ -38,9 +41,15 @@ cleanup_remote() {
 
 trap 'echo "backup failed; remote temp files may remain: '"${remote_backup}"' '"${remote_export}"'" >&2' ERR
 
-password="$(ros_escape "$ROUTEROS_BACKUP_PASSWORD")"
-
-run_ros "/system backup save name=\"${remote_base}\" password=\"${password}\""
+if [[ "$unencrypted" == 1 ]]; then
+  echo "warning: creating explicitly approved unencrypted RouterOS backup" >&2
+  run_ros "/system backup save name=\"${remote_base}\" dont-encrypt=yes"
+  backup_description="unencrypted binary RouterOS backup"
+else
+  password="$(ros_escape "$ROUTEROS_BACKUP_PASSWORD")"
+  run_ros "/system backup save name=\"${remote_base}\" password=\"${password}\""
+  backup_description="encrypted binary RouterOS backup"
+fi
 run_ros "/export file=\"${remote_base}\""
 
 scp "${router}:${remote_backup}" "${out}/routeros.backup" >/dev/null
@@ -63,7 +72,7 @@ cat >"${out}/README.md" <<EOF
 Router: ${router}
 
 Files:
-- routeros.backup: encrypted binary RouterOS backup
+- routeros.backup: ${backup_description}
 - routeros.rsc: full RouterOS text export
 - firewall-filter.rsc: firewall filter export
 - firewall-nat.rsc: firewall NAT export
@@ -76,6 +85,8 @@ Files:
 
 Treat this directory as sensitive. Do not commit or share raw backup files.
 EOF
+
+chmod 600 "${out}"/*
 
 cleanup_remote
 trap - ERR

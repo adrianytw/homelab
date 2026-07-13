@@ -1,0 +1,24 @@
+apiVersion: v1
+data:
+    auth-password: ENC[AES256_GCM,data:F2ITF3ThwN67nQ5Gxfr1OR6TiWUZyCQgPc+xYE77n1eMFeVyHLk1KEG7GD8=,iv:hjBv5wen1//y7+HETcl7XkL8tJtYO3noRqmmKnCkozI=,tag:7xqHI9mnTL/NlnDAryZk3A==,type:str]
+    priv-password: ENC[AES256_GCM,data:sk8A7MPbNnM4IVdKm2zqf7ERZFcwthFQMC/w6GEr/9rIeMUctzU/hTBpQMk=,iv:T93J6mm4lKhXpLrUrpuGYr8/18M2G00IL2gLHt5w14E=,tag:DJibn6qmZsqOjVEl1kyL1A==,type:str]
+    username: ENC[AES256_GCM,data:UYzxSQUohst0Gd6wCB0yZA==,iv:Bg+46sG3DgIkd0snAaJ6tLsnbz/qPdxHhPr1jjEVBI0=,tag:iVYfQeDOq57aUR7B6zfH6Q==,type:str]
+kind: Secret
+metadata:
+    name: routeros-snmp
+    namespace: core
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBacUtzMlpOZ21EaDkreXAz
+            bzN6bnNONXBOQU1aWk0ybVlCemRzY3RFcXdnCkFBR0x1eTJScDY4cWc2dUI2emJH
+            NjBjTUdpWmtpMTBoN2w5YWdqc1JnWm8KLS0tIHIxUklURjAxS1Y5NEErQnZoN05C
+            Y2ZKWVpUaHdrMzZUbEFOVzNqWHZUYUUKZk2DgVL8b7kaRTDDSuuw2a4bpGo+Sz0x
+            1ULmGDAFkAI8xLgle+cmcYH5b2aJ7xQTCv+ZH9cdbNe8HQtKGum/iw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age15enuwe3quuz6v7exl4wpkdlsyh9ucjsah90txzuvulzw42n2dazsqwgcce
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-07-13T08:18:50Z"
+    mac: ENC[AES256_GCM,data:uK0h+dtHycEzbrTRifxhyl1SkWacx6TevhMFolNx/57UVCmBSKIRg9m0A8HU7RLUVjTchXgwg7sGoOrsCRX1GzR9hPrOCN1JSY5qnZe56FL7P7URM6UJTwbw7sAWBwzo7640ZfSmgOW/K7zpWPDD7iHbDu+vzqtAs10q6qenzZs=,iv:qGqfJt7bm6bInvFCj4FaMRm+D+8fEdX/xRrSi1LKqLk=,tag:M2d6CFzaxeynUitoGp2Nyw==,type:str]
+    version: 3.13.2

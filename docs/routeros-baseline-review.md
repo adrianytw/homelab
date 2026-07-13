@@ -1,12 +1,12 @@
 # RouterOS Baseline Review
 
-Generated from backup pack: `/home/nairda/homelab-backups/routeros/20260627T235527Z`
+Generated from backup pack: `/home/nairda/homelab-backups/routeros/20260713T081557Z`
 
 ## Baseline
 
 | Item | Value |
 | --- | --- |
-| Backup timestamp | `20260627T235527Z` |
+| Backup timestamp | `20260713T081557Z` |
 | RouterOS version | `7.23.1 (stable)` |
 | Board | `hAP ax^3` |
 | Architecture | `arm64` |
@@ -28,7 +28,7 @@ Generated from backup pack: `/home/nairda/homelab-backups/routeros/20260627T2355
 | Item | Value |
 | --- | --- |
 | veth | `0 R veth1-adguard 1A:CC:40:EA:54:E4 1A:CC:40:EA:54:E5 no 10.0.0.2/24` |
-| container | `0 R adguardhome:latest /usb1-part1/adguardhome veth1-adguard 362.9MiB 0` |
+| container | `0 R adguardhome:latest /usb1-part1/adguardhome veth1-adguard 397.8MiB 0` |
 | USB storage | `1 BMp usb1-part1 usb1-part1 USB FLASH DRIVE @1'048'576-8'022'654'976` |
 
 ## WireGuard

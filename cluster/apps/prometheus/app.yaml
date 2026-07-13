@@ -22,6 +22,20 @@ data:
       - job_name: alertmanager
         static_configs:
           - targets: [alertmanager.core.svc.cluster.local:9093]
+      - job_name: router
+        metrics_path: /snmp
+        params:
+          auth: [routeros_v3]
+          module: [hrSystem, hrStorage, hrDevice, mikrotik]
+        static_configs:
+          - targets: [192.168.88.1]
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: snmp-exporter.core.svc.cluster.local:9116
   alerts.yaml: |
     groups:
       - name: homelab
@@ -46,6 +60,63 @@ data:
             for: 15m
             labels: {severity: warning}
             annotations: {summary: nmac CPU usage has exceeded 90% for 15 minutes}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: snmp-exporter, namespace: core}
+data:
+  auth.yml: |
+    auths:
+      routeros_v3:
+        version: 3
+        username: ${SNMP_USERNAME}
+        security_level: authPriv
+        password: ${SNMP_AUTH_PASSWORD}
+        auth_protocol: SHA
+        priv_protocol: AES
+        priv_password: ${SNMP_PRIV_PASSWORD}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: snmp-exporter, namespace: core}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: snmp-exporter}}
+  template:
+    metadata: {labels: {app: snmp-exporter}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: snmp-exporter
+          image: quay.io/prometheus/snmp-exporter@sha256:e5fd5e8b43ace6c088fe9bf0b37b7fff0e04380bee352be7ec41b853a4dd5859
+          args:
+            - --config.file=/etc/snmp_exporter/snmp.yml
+            - --config.file=/config/auth.yml
+            - --config.expand-environment-variables
+          env:
+            - {name: SNMP_USERNAME, valueFrom: {secretKeyRef: {name: routeros-snmp, key: username}}}
+            - {name: SNMP_AUTH_PASSWORD, valueFrom: {secretKeyRef: {name: routeros-snmp, key: auth-password}}}
+            - {name: SNMP_PRIV_PASSWORD, valueFrom: {secretKeyRef: {name: routeros-snmp, key: priv-password}}}
+          ports: [{name: http, containerPort: 9116}]
+          startupProbe: {httpGet: {path: /metrics, port: http}, failureThreshold: 30, periodSeconds: 5}
+          readinessProbe: {httpGet: {path: /metrics, port: http}}
+          livenessProbe: {httpGet: {path: /metrics, port: http}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+          volumeMounts: [{name: config, mountPath: /config, readOnly: true}]
+      volumes: [{name: config, configMap: {name: snmp-exporter}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: snmp-exporter, namespace: core}
+spec:
+  selector: {app: snmp-exporter}
+  ports: [{name: http, port: 9116, targetPort: http}]
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -265,7 +336,7 @@ spec:
   template:
     metadata:
       labels: {app: prometheus}
-      annotations: {homelab.nairdev.com/config-revision: "5"}
+      annotations: {homelab.nairdev.com/config-revision: "6"}
     spec:
       automountServiceAccountToken: false
       securityContext: {fsGroup: 65532, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
