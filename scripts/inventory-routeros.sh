@@ -34,6 +34,7 @@ run wireguard "/interface wireguard print; /interface wireguard peers print"
 run services "/ip service print detail"
 run https_rest "/ip service print detail where name=\"www-ssl\""
 run certificates "/certificate print detail without-paging"
+run snmp "/snmp print; /snmp community print detail without-paging"
 
 close_control
 trap - EXIT

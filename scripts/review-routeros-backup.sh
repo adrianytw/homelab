@@ -25,6 +25,7 @@ required=(
   firewall-nat.rsc
   wireguard.rsc
   services.txt
+  snmp.txt
   routeros.backup
   routeros.rsc
 )
@@ -94,6 +95,15 @@ nmac_addr="$(printf '%s\n' "$nmac_lease" | extract_token address)"
 nmac_mac="$(printf '%s\n' "$nmac_lease" | extract_token mac-address)"
 ha_addr="$(printf '%s\n' "$ha_lease" | extract_token address)"
 ha_mac="$(printf '%s\n' "$ha_lease" | extract_token mac-address)"
+snmp_enabled="$(kv_value enabled "$pack/snmp.txt")"
+snmp_prometheus="$(grep -A 2 -m 1 'name="prometheus"' "$pack/snmp.txt" | tr '\n\r' '  ' | sed -E 's/[[:space:]]+/ /g; s/^[ ]+//; s/[ ]+$//' || true)"
+snmp_source="$(printf '%s\n' "$snmp_prometheus" | extract_token addresses)"
+snmp_security="$(printf '%s\n' "$snmp_prometheus" | extract_token security)"
+snmp_read="$(printf '%s\n' "$snmp_prometheus" | extract_token read-access)"
+snmp_write="$(printf '%s\n' "$snmp_prometheus" | extract_token write-access)"
+snmp_public="$(first_match 'name="public"' "$pack/snmp.txt")"
+snmp_public_status=enabled
+[[ "$snmp_public" =~ X.*name=\"public\" ]] && snmp_public_status=disabled
 
 review_flags=()
 [[ -n "$dstnat_2222" ]] && review_flags+=("WAN dst-nat exists: TCP 2222 to 192.168.88.138:2222.")
@@ -103,6 +113,11 @@ for svc in www www-ssl reverse-proxy winbox api api-ssl; do
   fi
 done
 [[ -n "$ha_addr" && "$ha_addr" != "192.168.88.30" ]] && review_flags+=("Home Assistant current lease is ${ha_addr}; target convention is 192.168.88.30 if free.")
+[[ "$snmp_enabled" == yes ]] || review_flags+=("SNMP is not enabled for RouterOS resource monitoring.")
+[[ "$snmp_source" == "192.168.88.20/32" ]] || review_flags+=("Prometheus SNMP source is '${snmp_source:-unknown}', expected 192.168.88.20/32.")
+[[ "$snmp_security" == private ]] || review_flags+=("Prometheus SNMP security is '${snmp_security:-unknown}', expected authPriv/private.")
+[[ "$snmp_read" == yes && "$snmp_write" == no ]] || review_flags+=("Prometheus SNMP access must remain read-only.")
+[[ "$snmp_public_status" == disabled ]] || review_flags+=("Default public SNMP community is enabled.")
 
 mkdir -p "$(dirname "$out")"
 
@@ -156,6 +171,16 @@ Generated from backup pack: \`${pack}\`
 | Filter rule count | \`${filter_rules}\` |
 | NAT rule count | \`${nat_rules}\` |
 | WAN dst-nat 2222 | \`${dstnat_2222:-not found}\` |
+
+## Monitoring
+
+| Item | Value |
+| --- | --- |
+| SNMP enabled | \`${snmp_enabled:-unknown}\` |
+| Prometheus source | \`${snmp_source:-unknown}\` |
+| Prometheus security | \`${snmp_security:-unknown}\` |
+| Prometheus access | read=\`${snmp_read:-unknown}\`, write=\`${snmp_write:-unknown}\` |
+| Default public community | \`${snmp_public_status}\` |
 
 ## DHCP Lease Candidates
 

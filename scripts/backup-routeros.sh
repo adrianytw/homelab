@@ -65,6 +65,7 @@ capture "firewall-nat.rsc" "/ip firewall nat export"
 capture "wireguard.rsc" "/interface wireguard export"
 capture "containers.txt" "/interface veth print; /container print; /container config print; /container mounts print; /disk print; /file print where name~\"usb|adguard\""
 capture "services.txt" "/ip service print detail"
+capture "snmp.txt" "/snmp print; /snmp community print detail without-paging"
 
 cat >"${out}/README.md" <<EOF
 # RouterOS Backup ${ts}
@@ -81,6 +82,7 @@ Files:
 - dns.txt: RouterOS DNS settings
 - containers.txt: AdGuard container/veth/storage state
 - services.txt: RouterOS service exposure state
+- snmp.txt: SNMP service and community access policy (RouterOS omits passwords)
 - resource.txt, packages.txt, addresses.txt: system baseline
 
 Treat this directory as sensitive. Do not commit or share raw backup files.

@@ -1,12 +1,12 @@
 # RouterOS Baseline Review
 
-Generated from backup pack: `/home/nairda/homelab-backups/routeros/20260713T081557Z`
+Generated from backup pack: `/home/nairda/homelab-backups/routeros/20260713T091117Z`
 
 ## Baseline
 
 | Item | Value |
 | --- | --- |
-| Backup timestamp | `20260713T081557Z` |
+| Backup timestamp | `20260713T091117Z` |
 | RouterOS version | `7.23.1 (stable)` |
 | Board | `hAP ax^3` |
 | Architecture | `arm64` |
@@ -28,7 +28,7 @@ Generated from backup pack: `/home/nairda/homelab-backups/routeros/20260713T0815
 | Item | Value |
 | --- | --- |
 | veth | `0 R veth1-adguard 1A:CC:40:EA:54:E4 1A:CC:40:EA:54:E5 no 10.0.0.2/24` |
-| container | `0 R adguardhome:latest /usb1-part1/adguardhome veth1-adguard 397.8MiB 0` |
+| container | `0 R adguardhome:latest /usb1-part1/adguardhome veth1-adguard 398.7MiB 0.1` |
 | USB storage | `1 BMp usb1-part1 usb1-part1 USB FLASH DRIVE @1'048'576-8'022'654'976` |
 
 ## WireGuard
@@ -46,6 +46,16 @@ Generated from backup pack: `/home/nairda/homelab-backups/routeros/20260713T0815
 | Filter rule count | `13` |
 | NAT rule count | `2` |
 | WAN dst-nat 2222 | `not found` |
+
+## Monitoring
+
+| Item | Value |
+| --- | --- |
+| SNMP enabled | `yes` |
+| Prometheus source | `192.168.88.20/32` |
+| Prometheus security | `private` |
+| Prometheus access | read=`yes`, write=`no` |
+| Default public community | `disabled` |
 
 ## DHCP Lease Candidates
 

@@ -39,7 +39,8 @@ Then it removes only this run's generated RouterOS files.
 
 - `routeros.backup` exists off-router and is encrypted with the provided password.
 - `routeros.rsc` exists off-router.
-- `firewall-filter.rsc`, `firewall-nat.rsc`, `wireguard.rsc`, `dhcp.txt`, `dns.txt`, `containers.txt`, and `services.txt` exist.
+- `firewall-filter.rsc`, `firewall-nat.rsc`, `wireguard.rsc`, `dhcp.txt`, `dns.txt`, `containers.txt`, `services.txt`, and `snmp.txt` exist.
+- `snmp.txt` confirms the Prometheus community is source-restricted, read-only, and authPriv/private, with the default public community disabled.
 - `README.md` exists in the backup directory.
 - RouterOS no longer has files matching this run's timestamp.
 
