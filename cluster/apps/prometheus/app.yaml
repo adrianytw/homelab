@@ -19,6 +19,9 @@ data:
       - job_name: nmac
         static_configs:
           - targets: [node-exporter.core.svc.cluster.local:9100]
+      - job_name: alertmanager
+        static_configs:
+          - targets: [alertmanager.core.svc.cluster.local:9093]
   alerts.yaml: |
     groups:
       - name: homelab
@@ -251,7 +254,7 @@ spec:
   template:
     metadata:
       labels: {app: prometheus}
-      annotations: {homelab.nairdev.com/config-revision: "3"}
+      annotations: {homelab.nairdev.com/config-revision: "4"}
     spec:
       automountServiceAccountToken: false
       securityContext: {fsGroup: 65532, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
