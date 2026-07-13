@@ -7,6 +7,7 @@ done
 
 scripts/test-backup-opentofu-state.sh
 scripts/test-backup-app.sh
+scripts/check-monitoring.sh
 
 required=(
   COMMANDS.md
