@@ -35,8 +35,13 @@ awk '/^  alerts.yaml: \|$/ { copy=1; next } /^---$/ { if (copy) exit } copy { su
 "$promtool" check rules "$tmp/alerts.yaml"
 
 awk '/^  nmac.json: \|$/ { copy=1; next } /^  router.json: \|$/ { copy=0 } copy { sub(/^    /, ""); print }' cluster/apps/grafana/app.yaml >"$tmp/nmac.json"
-awk '/^  router.json: \|$/ { copy=1; next } /^---$/ { if (copy) exit } copy { sub(/^    /, ""); print }' cluster/apps/grafana/app.yaml >"$tmp/router.json"
+awk '/^  router.json: \|$/ { copy=1; next } /^  platform.json: \|$/ { copy=0 } copy { sub(/^    /, ""); print }' cluster/apps/grafana/app.yaml >"$tmp/router.json"
+awk '/^  platform.json: \|$/ { copy=1; next } /^---$/ { if (copy) exit } copy { sub(/^    /, ""); print }' cluster/apps/grafana/app.yaml >"$tmp/platform.json"
 python3 -m json.tool "$tmp/nmac.json" >/dev/null
 python3 -m json.tool "$tmp/router.json" >/dev/null
+python3 -m json.tool "$tmp/platform.json" >/dev/null
+
+awk '/^  configure.js: \|$/ { copy=1; next } /^---$/ { if (copy) exit } copy { sub(/^    /, ""); print }' cluster/apps/uptime-kuma/app.yaml >"$tmp/configure.js"
+CHECK_ONLY=1 node "$tmp/configure.js"
 
 echo "monitoring config ok"

@@ -14,13 +14,50 @@ spec:
   strategy: {type: Recreate}
   selector: {matchLabels: {app: healthchecks}}
   template:
-    metadata: {labels: {app: healthchecks}}
+    metadata:
+      labels: {app: healthchecks}
+      annotations: {homelab.nairdev.com/credentials-revision: "1"}
     spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 999
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        - name: bootstrap
+          image: docker.io/healthchecks/healthchecks@sha256:7cdc4e61a775c82d886703c953bfdccbca9db3ab39f6c4583d39662f3947e1a9
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              /opt/healthchecks/manage.py migrate --noinput
+              /opt/healthchecks/manage.py shell < /bootstrap/bootstrap.py
+          env:
+            - {name: SITE_ROOT, value: "https://health.ops.nairdev.com"}
+            - {name: ALLOWED_HOSTS, value: "health.ops.nairdev.com"}
+            - {name: DB_NAME, value: "/data/hc.sqlite"}
+            - {name: DEBUG, value: "False"}
+            - name: SECRET_KEY
+              valueFrom: {secretKeyRef: {name: healthchecks-admin, key: secret-key}}
+            - name: HC_ADMIN_USERNAME
+              valueFrom: {secretKeyRef: {name: healthchecks-admin, key: username}}
+            - name: HC_ADMIN_EMAIL
+              valueFrom: {secretKeyRef: {name: healthchecks-admin, key: email}}
+            - name: HC_ADMIN_PASSWORD
+              valueFrom: {secretKeyRef: {name: healthchecks-admin, key: password}}
+            - name: HC_PING_KEY
+              valueFrom: {secretKeyRef: {name: healthchecks-ping-key, key: ping-key}}
+            - name: NTFY_USERNAME
+              valueFrom: {secretKeyRef: {name: ntfy-publisher, key: username}}
+            - name: NTFY_PASSWORD
+              valueFrom: {secretKeyRef: {name: ntfy-publisher, key: password}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            runAsNonRoot: true
+            runAsUser: 999
+          volumeMounts:
+            - {name: bootstrap, mountPath: /bootstrap, readOnly: true}
+            - {name: data, mountPath: /data}
       containers:
         - name: healthchecks
           image: docker.io/healthchecks/healthchecks@sha256:7cdc4e61a775c82d886703c953bfdccbca9db3ab39f6c4583d39662f3947e1a9
@@ -30,6 +67,7 @@ spec:
             - {name: DB_NAME, value: "/data/hc.sqlite"}
             - {name: DEBUG, value: "False"}
             - {name: UWSGI_PROCESSES, value: "2"}
+            - {name: INTEGRATIONS_ALLOW_PRIVATE_IPS, value: "True"}
             - name: SECRET_KEY
               valueFrom: {secretKeyRef: {name: healthchecks-admin, key: secret-key}}
           ports:
@@ -59,6 +97,8 @@ spec:
           volumeMounts:
             - {name: data, mountPath: /data}
       volumes:
+        - name: bootstrap
+          configMap: {name: healthchecks-bootstrap}
         - name: data
           persistentVolumeClaim: {claimName: healthchecks-data}
 ---

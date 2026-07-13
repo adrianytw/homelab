@@ -22,6 +22,19 @@ data:
       - job_name: alertmanager
         static_configs:
           - targets: [alertmanager.core.svc.cluster.local:9093]
+      - job_name: flux
+        static_configs:
+          - targets:
+              - source-controller-metrics.flux-system.svc.cluster.local:8080
+              - kustomize-controller-metrics.flux-system.svc.cluster.local:8080
+              - helm-controller-metrics.flux-system.svc.cluster.local:8080
+              - notification-controller-metrics.flux-system.svc.cluster.local:8080
+      - job_name: cert-manager
+        static_configs:
+          - targets: [cert-manager.cert-manager.svc.cluster.local:9402]
+      - job_name: traefik
+        static_configs:
+          - targets: [traefik-metrics.kube-system.svc.cluster.local:9100]
       - job_name: router
         metrics_path: /snmp
         params:
@@ -45,6 +58,26 @@ data:
             for: 2m
             labels: {severity: critical}
             annotations: {summary: "{{ $labels.job }} monitoring target is down"}
+          - alert: FluxRepeatedReconciliationErrors
+            expr: increase(controller_runtime_reconcile_errors_total{job="flux"}[15m]) >= 3
+            for: 5m
+            labels: {severity: warning}
+            annotations: {summary: "Flux {{ $labels.controller }} has repeated reconciliation errors"}
+          - alert: CertificateNotReady
+            expr: certmanager_certificate_ready_status{condition=~"False|Unknown"} == 1
+            for: 15m
+            labels: {severity: warning}
+            annotations: {summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} is not Ready"}
+          - alert: ClusterIssuerNotReady
+            expr: certmanager_clusterissuer_ready_status{condition=~"False|Unknown"} == 1
+            for: 15m
+            labels: {severity: warning}
+            annotations: {summary: "ClusterIssuer {{ $labels.name }} is not Ready"}
+          - alert: CertificateExpiringSoon
+            expr: (certmanager_certificate_expiration_timestamp_seconds > 0) and (certmanager_certificate_expiration_timestamp_seconds - time() < 14 * 24 * 60 * 60)
+            for: 10m
+            labels: {severity: warning}
+            annotations: {summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} expires within 14 days"}
           - alert: NmacDiskSpaceLow
             expr: node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} < 0.15
             for: 10m
@@ -294,7 +327,7 @@ spec:
   template:
     metadata:
       labels: {app: ntfy-alertmanager}
-      annotations: {homelab.nairdev.com/config-revision: "3"}
+      annotations: {homelab.nairdev.com/config-revision: "4"}
     spec:
       automountServiceAccountToken: false
       securityContext: {fsGroup: 65534, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
@@ -341,7 +374,7 @@ spec:
             - {name: runtime, mountPath: /runtime, readOnly: true}
       volumes:
         - {name: config, configMap: {name: ntfy-alertmanager}}
-        - {name: secret, secret: {secretName: ntfy-admin}}
+        - {name: secret, secret: {secretName: ntfy-publisher}}
         - {name: runtime, emptyDir: {medium: Memory}}
 ---
 apiVersion: v1
@@ -361,7 +394,7 @@ spec:
   template:
     metadata:
       labels: {app: prometheus}
-      annotations: {homelab.nairdev.com/config-revision: "8"}
+      annotations: {homelab.nairdev.com/config-revision: "9"}
     spec:
       automountServiceAccountToken: false
       securityContext: {fsGroup: 65532, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}

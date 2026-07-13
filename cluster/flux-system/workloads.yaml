@@ -65,7 +65,7 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata: {name: healthchecks, namespace: flux-system}
 spec:
-  dependsOn: [{name: glance}, {name: ingress}]
+  dependsOn: [{name: glance}, {name: ingress}, {name: ntfy}]
   decryption: {provider: sops, secretRef: {name: sops-age}}
   interval: 10m
   path: ./cluster/apps/healthchecks

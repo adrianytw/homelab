@@ -3,8 +3,8 @@
 ## Purpose
 
 Recover and validate Uptime Kuma, Prometheus, Alertmanager, the ntfy bridge,
-node-exporter, and Grafana after
-the underlying host, data, k3s, age identity, and Flux are healthy.
+node-exporter, the SNMP exporter, and Grafana after the underlying host, data,
+k3s, age identity, and Flux are healthy.
 
 ## Prerequisites
 
@@ -18,16 +18,24 @@ the underlying host, data, k3s, age identity, and Flux are healthy.
 ## Validation
 
 - Every Flux Kustomization reports `Ready=True` at the same Git revision.
-- Prometheus reports `up=1` for `prometheus` and `nmac`.
-- Prometheus loads `MonitoringTargetDown`, `NmacDiskSpaceLow`, and
-  `NmacMemoryLow` with rule health `ok`.
+- Prometheus reports `up=1` for every target in the `prometheus`, `nmac`,
+  `alertmanager`, `router`, `flux`, `cert-manager`, and `traefik` jobs.
+- Prometheus loads all thirteen rules with health `ok`: target loss; nmac disk,
+  memory, and CPU; RouterOS CPU, memory, system flash, AdGuard USB, and
+  temperature; Flux reconciliation errors; Certificate/ClusterIssuer
+  readiness; and certificate expiry.
 - Prometheus discovers `alertmanager.core.svc.cluster.local:9093`; Alertmanager
   reports its configuration healthy and the bridge `/health` endpoint is ready.
 - A controlled `MonitoringTargetDown` test produces one firing notification and
   one resolved notification in ntfy. Resume Flux and confirm selector repair.
-- Grafana serves the provisioned `nmac overview` dashboard.
-- Uptime Kuma shows successful heartbeats for the six core web services, Home
-  Assistant, and AdGuard DNS through the client endpoint at `192.168.88.1`.
+- Grafana serves the provisioned `nmac overview`, `RouterOS overview`, and
+  `Platform overview` dashboards.
+- Uptime Kuma shows successful heartbeats for all eleven desired monitors. Its
+  CronJob reconciles named monitor drift every fifteen minutes without deleting
+  unknown/manual monitors or notification attachments.
+- Glance renders all nine human-facing service names as healthy.
+- RouterOS SNMP remains source-restricted to `192.168.88.20/32`, read-only,
+  authPriv/private, with the default public community disabled.
 - Delete the node-exporter pod once and confirm its DaemonSet and scrape recover.
 
 ## Rollback

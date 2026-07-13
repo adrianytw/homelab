@@ -115,7 +115,6 @@ kind: ConfigMap
 metadata: {name: uptime-kuma-monitor-setup, namespace: core}
 data:
   configure.js: |
-    const { io } = require("socket.io-client");
     const wanted = [
       {name: "Glance", url: "https://home.nairdev.com"},
       {name: "Uptime Kuma", url: "https://status.nairdev.com"},
@@ -132,9 +131,39 @@ data:
         dns_resolve_type: "A", dns_resolve_server: "192.168.88.1"
       }
     ];
+    const common = {
+      type: "http", method: "GET", interval: 60,
+      retryInterval: 30, maxretries: 2, resendInterval: 0,
+      accepted_statuscodes: ["200-399"], ignoreTls: false,
+      expiryNotification: true, domainExpiryNotification: false,
+      maxredirects: 10, kafkaProducerBrokers: [],
+      kafkaProducerSaslOptions: {}, rabbitmqNodes: [], conditions: []
+    };
+    const desired = (monitor) => ({...common, ...monitor});
+    const payload = (monitor, current = {}) => ({
+      ...current, ...desired(monitor),
+      notificationIDList: current.notificationIDList ?? {}
+    });
+    const changed = (current, monitor) => Object.entries(desired(monitor))
+      .some(([key, value]) => JSON.stringify(current[key]) !== JSON.stringify(value));
+    if (process.env.CHECK_ONLY) {
+      const notifications = {"1": true};
+      const current = {id: 7, name: "Glance", url: "old", notificationIDList: notifications};
+      const next = payload(wanted[0], current);
+      if (!changed(current, wanted[0]) || changed(next, wanted[0]) ||
+          next.id !== 7 || next.notificationIDList !== notifications) process.exit(1);
+      console.log("uptime kuma reconciliation check ok");
+      process.exit(0);
+    }
+    const { io } = require("socket.io-client");
     const socket = io(process.env.KUMA_URL, { transports: ["websocket"] });
-    const emit = (event, ...args) => new Promise((resolve, reject) =>
-      socket.emit(event, ...args, (result) => result?.ok ? resolve(result) : reject(new Error(result?.msg || `${event} failed`))));
+    const emit = (event, ...args) => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`${event} timed out`)), 30000);
+      socket.emit(event, ...args, (result) => {
+        clearTimeout(timer);
+        result?.ok ? resolve(result) : reject(new Error(result?.msg || `${event} failed`));
+      });
+    });
     (async () => {
       await new Promise((resolve, reject) => {
         socket.once("connect", resolve);
@@ -145,47 +174,48 @@ data:
       await emit("getMonitorList");
       const existing = Object.values(await listPromise);
       for (const monitor of wanted) {
-        if (existing.some((item) => item.name === monitor.name)) continue;
-        await emit("add", {
-          type: "http", method: "GET", interval: 60,
-          retryInterval: 30, maxretries: 2, resendInterval: 0,
-          notificationIDList: {}, accepted_statuscodes: ["200-399"],
-          ignoreTls: false, expiryNotification: true,
-          domainExpiryNotification: false, maxredirects: 10,
-          kafkaProducerBrokers: [], kafkaProducerSaslOptions: {},
-          rabbitmqNodes: [], conditions: [], ...monitor
-        });
-        console.log(`configured ${monitor.name}`);
+        const current = existing.find((item) => item.name === monitor.name);
+        if (!current) await emit("add", payload(monitor));
+        else if (changed(current, monitor)) await emit("editMonitor", payload(monitor, current));
+        else continue;
+        console.log(`reconciled ${monitor.name}`);
       }
       socket.close();
     })().catch((error) => { console.error(error.message); socket.close(); process.exit(1); });
 ---
 apiVersion: batch/v1
-kind: Job
-metadata: {name: uptime-kuma-monitor-setup-v3, namespace: core}
+kind: CronJob
+metadata: {name: uptime-kuma-monitor-setup, namespace: core}
 spec:
-  backoffLimit: 4
-  template:
-    metadata: {labels: {app: uptime-kuma-monitor-setup}}
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
     spec:
-      restartPolicy: OnFailure
-      automountServiceAccountToken: false
-      securityContext: {seccompProfile: {type: RuntimeDefault}}
-      containers:
-        - name: configure
-          image: docker.io/louislam/uptime-kuma@sha256:775df4fa787d0e77bdbd27c801a154ac578340fa8f70b14f039a1dfc5f3bbfda
-          command: [node, /config/configure.js]
-          env:
-            - {name: NODE_PATH, value: /app/node_modules}
-            - {name: KUMA_URL, value: "http://uptime-kuma.core.svc.cluster.local"}
-            - name: KUMA_USERNAME
-              valueFrom: {secretKeyRef: {name: uptime-kuma-admin, key: username}}
-            - name: KUMA_PASSWORD
-              valueFrom: {secretKeyRef: {name: uptime-kuma-admin, key: password}}
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities: {drop: [ALL]}
-            runAsNonRoot: true
-            runAsUser: 1000
-          volumeMounts: [{name: config, mountPath: /config, readOnly: true}]
-      volumes: [{name: config, configMap: {name: uptime-kuma-monitor-setup}}]
+      backoffLimit: 4
+      activeDeadlineSeconds: 300
+      template:
+        metadata: {labels: {app: uptime-kuma-monitor-setup}}
+        spec:
+          restartPolicy: OnFailure
+          automountServiceAccountToken: false
+          securityContext: {seccompProfile: {type: RuntimeDefault}}
+          containers:
+            - name: configure
+              image: docker.io/louislam/uptime-kuma@sha256:775df4fa787d0e77bdbd27c801a154ac578340fa8f70b14f039a1dfc5f3bbfda
+              command: [node, /config/configure.js]
+              env:
+                - {name: NODE_PATH, value: /app/node_modules}
+                - {name: KUMA_URL, value: "http://uptime-kuma.core.svc.cluster.local"}
+                - name: KUMA_USERNAME
+                  valueFrom: {secretKeyRef: {name: uptime-kuma-admin, key: username}}
+                - name: KUMA_PASSWORD
+                  valueFrom: {secretKeyRef: {name: uptime-kuma-admin, key: password}}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}
+                runAsNonRoot: true
+                runAsUser: 1000
+              volumeMounts: [{name: config, mountPath: /config, readOnly: true}]
+          volumes: [{name: config, configMap: {name: uptime-kuma-monitor-setup}}]

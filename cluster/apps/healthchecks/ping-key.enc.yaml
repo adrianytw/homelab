@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: healthchecks-ping-key
+    namespace: core
+type: Opaque
+stringData:
+    ping-key: ENC[AES256_GCM,data:8YRLjtFWr1SGHmE2Ejz+Tm90OMd9+w==,iv:0RF8ee0Nz/lydHFw9zOwFFeLFB893bopoHN8VDkQOPI=,tag:RwLZ2zG3D3+hxUXuiEpauw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBmTTRyUG5VWWRBWm5kWGV6
+            Y1BORVJKMnFxTElDcm1jSnEvS2lZTloxNGlBCllEMnpMOWpkNHNDRjB5RGJUM0xD
+            ZThUWXBOeW1FQ0ttckFBdUxUbUpnck0KLS0tIGx6cTROZWd0SklnWnlIb2dRYWR2
+            cVpkYzhEMDBTNHREV0U3NkF3OVJuTFkKMK+TB9qVaztB42tyInYg/ftenbxHyUsR
+            8tCZ0ZeutQ2qgmRvHFLHYmYecxUrjxB3RMObd/OtyUwjSmx9Na9VCw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age15enuwe3quuz6v7exl4wpkdlsyh9ucjsah90txzuvulzw42n2dazsqwgcce
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-07-13T09:31:53Z"
+    mac: ENC[AES256_GCM,data:2LShhcnXRcTKemuE4kz/OcxA8UcUpCZdzPTw+8jkEFP3Yy45oWurzwbHbm8rPpI8xwCn1Ob4or9SU554i7Nd8zLV9s7yEDOrwEi0ZoFIEAZuvg1T5NUwewqk1kVITwCKAp40F00rN1Yx5x0Ec0fVF7DgUX31CrxHBvuujuweZ3E=,iv:T5cynHVICH06ROV2j2dlrvSKjz10jP0zp9UTuriQqyY=,tag:r6aYYIlAYqou6UzD1ZPi7A==,type:str]
+    version: 3.13.2

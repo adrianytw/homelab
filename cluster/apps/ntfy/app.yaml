@@ -26,6 +26,7 @@ spec:
     metadata:
       labels:
         app: ntfy
+      annotations: {homelab.nairdev.com/credentials-revision: "1"}
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -44,6 +45,7 @@ spec:
             - {name: NTFY_CACHE_FILE, value: "/var/lib/ntfy/cache.db"}
             - {name: NTFY_AUTH_FILE, value: "/var/lib/ntfy/auth.db"}
             - {name: NTFY_AUTH_DEFAULT_ACCESS, value: "deny-all"}
+            - {name: NTFY_AUTH_ACCESS, value: "homelab-publisher:homelab-alerts:write-only"}
             - {name: NTFY_ENABLE_LOGIN, value: "true"}
             - name: NTFY_AUTH_USERS
               valueFrom:

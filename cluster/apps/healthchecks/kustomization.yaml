@@ -1,3 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources: [admin-credentials.enc.yaml, app.yaml, certificate.yaml]
+resources:
+  - admin-credentials.enc.yaml
+  - ping-key.enc.yaml
+  - app.yaml
+  - certificate.yaml
+configMapGenerator:
+  - name: healthchecks-bootstrap
+    namespace: core
+    files: [bootstrap.py]
