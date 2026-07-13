@@ -7,6 +7,8 @@ done
 
 scripts/test-backup-opentofu-state.sh
 scripts/test-backup-app.sh
+scripts/test-backup-adguard.sh
+scripts/test-install-backup-cron.sh
 scripts/check-monitoring.sh
 
 required=(

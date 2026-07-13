@@ -26,6 +26,7 @@ required=(
   wireguard.rsc
   services.txt
   snmp.txt
+  SHA256SUMS
   routeros.backup
   routeros.rsc
 )
@@ -36,6 +37,8 @@ for file in "${required[@]}"; do
     exit 1
   fi
 done
+
+(cd "$pack" && sha256sum -c SHA256SUMS >/dev/null)
 
 first_match() {
   local pattern="$1"
@@ -53,7 +56,7 @@ dhcp_lease_block() {
   local pattern="$1"
   local file="$2"
   awk -v pat="$pattern" '
-    /^[[:space:]]+[0-9]+[[:space:]]/ {
+    /^[[:space:]]*[0-9]+[[:space:]]/ {
       if (block ~ pat) { print block; found=1; exit }
       block=$0
       next
@@ -104,6 +107,16 @@ snmp_write="$(printf '%s\n' "$snmp_prometheus" | extract_token write-access)"
 snmp_public="$(first_match 'name="public"' "$pack/snmp.txt")"
 snmp_public_status=enabled
 [[ "$snmp_public" =~ X.*name=\"public\" ]] && snmp_public_status=disabled
+www_ssl="$(dhcp_lease_block 'name="www-ssl"' "$pack/services.txt")"
+www_ssl_port="$(printf '%s\n' "$www_ssl" | extract_token port)"
+www_ssl_cert="$(printf '%s\n' "$www_ssl" | extract_token certificate)"
+reverse_proxy="$(dhcp_lease_block 'name="reverse-proxy"' "$pack/services.txt")"
+reverse_proxy_port="$(printf '%s\n' "$reverse_proxy" | extract_token port)"
+reverse_proxy_cert="$(printf '%s\n' "$reverse_proxy" | extract_token certificate)"
+certificate_count=not-captured
+if [[ -f "$pack/certificates.txt" ]]; then
+  certificate_count="$(grep -cE '^[[:space:]]+[0-9]+.*name=' "$pack/certificates.txt" || true)"
+fi
 
 review_flags=()
 [[ -n "$dstnat_2222" ]] && review_flags+=("WAN dst-nat exists: TCP 2222 to 192.168.88.138:2222.")
@@ -118,6 +131,8 @@ done
 [[ "$snmp_security" == private ]] || review_flags+=("Prometheus SNMP security is '${snmp_security:-unknown}', expected authPriv/private.")
 [[ "$snmp_read" == yes && "$snmp_write" == no ]] || review_flags+=("Prometheus SNMP access must remain read-only.")
 [[ "$snmp_public_status" == disabled ]] || review_flags+=("Default public SNMP community is enabled.")
+[[ "$www_ssl_port" == 8443 && "$www_ssl_cert" == homelab-router-rest ]] || review_flags+=("RouterOS REST listener differs from reviewed www-ssl:8443/homelab-router-rest state.")
+[[ "$reverse_proxy_port" == 443 && "$reverse_proxy_cert" == homelab-adguard ]] || review_flags+=("AdGuard reverse proxy differs from reviewed port 443/homelab-adguard state.")
 
 mkdir -p "$(dirname "$out")"
 
@@ -182,6 +197,14 @@ Generated from backup pack: \`${pack}\`
 | Prometheus access | read=\`${snmp_read:-unknown}\`, write=\`${snmp_write:-unknown}\` |
 | Default public community | \`${snmp_public_status}\` |
 
+## TLS Services
+
+| Item | Value |
+| --- | --- |
+| RouterOS REST | www-ssl port \`${www_ssl_port:-unknown}\`, certificate \`${www_ssl_cert:-unknown}\` |
+| AdGuard HTTPS | reverse-proxy port \`${reverse_proxy_port:-unknown}\`, certificate \`${reverse_proxy_cert:-unknown}\` |
+| Certificate inventory entries | \`${certificate_count}\` |
+
 ## DHCP Lease Candidates
 
 | Host | Address | MAC | Note |
@@ -206,7 +229,7 @@ EOF
 ## Remaining Decisions
 
 - WAN dst-nat \`2222 -> 192.168.88.138:2222\`: \`${dstnat_status}\`.
-- RouterOS admin services: review whether to disable unused WebFig/API/reverse-proxy later.
+- RouterOS admin services: preserve the AdGuard reverse proxy; review whether to disable unused WebFig/API listeners later.
 - DHCP pool shrink: defer until current leases are reviewed.
 - Home Assistant lease: currently \`${ha_addr:-unknown}\`; target convention remains \`192.168.88.30\` for a later migration.
 

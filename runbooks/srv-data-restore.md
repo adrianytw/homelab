@@ -20,6 +20,15 @@ make backup-app APP=uptime-kuma
 make backup-apps
 ```
 
+This off-host computer runs `scripts/backup-daily.sh` from cron at 03:15 local
+time. Install or refresh the idempotent cron block with
+`scripts/install-backup-cron.sh`. The runner uses a global lock, reports
+start/success/failure to Healthchecks, and continues the backup if Healthchecks
+is temporarily unavailable. Cron supplies no credentials; SSH key access and
+the local SOPS age identity must already work non-interactively.
+The same managed block captures AdGuard configuration at 03:45 and checks Home
+Assistant backup freshness at 05:00.
+
 Only `glance`, `uptime-kuma`, `ntfy`, `healthchecks`, `prometheus`, and
 `grafana` are accepted. The root-owned wrapper resolves fixed PVCs internally
 and refuses paths outside `/srv/data/k3s-storage`. The command verifies space,
@@ -40,16 +49,26 @@ from pathlib import Path
 db = next(Path(sys.argv[1]).rglob('kuma.db'))
 with sqlite3.connect(f'file:{db}?mode=ro', uri=True) as con:
     assert con.execute('pragma quick_check').fetchone() == ('ok',)
-    assert con.execute('select count(*) from monitor').fetchone() == (7,)
+    wanted = {'Glance', 'Uptime Kuma', 'ntfy', 'Healthchecks', 'Prometheus',
+              'Grafana', 'Home Assistant', 'Router', 'AdGuard',
+              'Test workload', 'AdGuard DNS'}
+    names = {row[0] for row in con.execute('select name from monitor')}
+    assert wanted <= names, f'missing monitors: {sorted(wanted - names)}'
 PY
 ```
 
 ## Validation
 
 - `sha256sum -c SHA256SUMS` passes before decryption.
-- Every SQLite `quick_check` returns `ok`; Uptime Kuma reports eight monitors.
-- Scratch ownership, modes, ACLs, xattrs, and SELinux labels match the source.
+- Every SQLite `quick_check` returns `ok`; all eleven desired Uptime Kuma
+  monitors are present. Extra manual monitors are allowed.
+- The scratch archive listing and application-level checks pass. The encrypted
+  stream preserves numeric metadata recorded by tar, but this scratch check does
+  not claim production ACL, xattr, or SELinux-label restoration.
 - Keep the previous archive and any failed scratch tree until validation ends.
+- `crontab -l` contains exactly one managed `homelab backups` block.
+- Healthchecks records a successful `k3s-app-backups` run after the six archives
+  validate.
 
 ## Rollback
 

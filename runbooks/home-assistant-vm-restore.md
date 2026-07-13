@@ -119,6 +119,11 @@ Keep the on-host staging copy until isolated restore validation passes. It is te
 
 ## Validation
 
+`scripts/check-ha-backup-freshness.sh` verifies the newest off-host archive's
+outer checksum daily and reports failure to Healthchecks after eight days. This
+is a freshness alarm, not restore proof: the cold VM backup and isolated boot
+test remain attended maintenance procedures.
+
 ### Production validation
 
 - `virsh domstate haos` reports `running` and autostart has not changed.
