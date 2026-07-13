@@ -124,6 +124,9 @@ data:
       {name: "Prometheus", url: "https://prom.ops.nairdev.com/-/ready"},
       {name: "Grafana", url: "https://grafana.nairdev.com/api/health"},
       {name: "Home Assistant", url: "http://192.168.88.84:8123"},
+      {name: "Router", url: "https://router.nairdev.com", ignoreTls: true},
+      {name: "AdGuard", url: "https://adguard.nairdev.com", ignoreTls: true},
+      {name: "Test workload", url: "https://test.k8s.nairdev.com"},
       {
         name: "AdGuard DNS", type: "dns", hostname: "example.com", port: 53,
         dns_resolve_type: "A", dns_resolve_server: "192.168.88.1"
@@ -159,7 +162,7 @@ data:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: uptime-kuma-monitor-setup-v2, namespace: core}
+metadata: {name: uptime-kuma-monitor-setup-v3, namespace: core}
 spec:
   backoffLimit: 4
   template:

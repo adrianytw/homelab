@@ -41,6 +41,11 @@ data:
             for: 10m
             labels: {severity: warning}
             annotations: {summary: nmac has less than 10% available memory}
+          - alert: NmacCpuHigh
+            expr: 100 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100 > 90
+            for: 15m
+            labels: {severity: warning}
+            annotations: {summary: nmac CPU usage has exceeded 90% for 15 minutes}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -260,7 +265,7 @@ spec:
   template:
     metadata:
       labels: {app: prometheus}
-      annotations: {homelab.nairdev.com/config-revision: "4"}
+      annotations: {homelab.nairdev.com/config-revision: "5"}
     spec:
       automountServiceAccountToken: false
       securityContext: {fsGroup: 65532, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
