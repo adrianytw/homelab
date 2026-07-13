@@ -1,6 +1,6 @@
 # Discovered State
 
-Collected read-only over `ssh router` and `ssh nmac`; last refreshed `2026-07-11`.
+Collected read-only over `ssh router` and `ssh nmac`; last refreshed `2026-07-13`.
 
 ## RouterOS
 
@@ -18,9 +18,11 @@ Collected read-only over `ssh router` and `ssh nmac`; last refreshed `2026-07-11
 | RouterOS DNS server | `10.0.0.2` |
 | DNS remote requests | enabled |
 | RouterOS API | enabled on `8728`; review before OpenTofu use |
-| RouterOS API SSL | enabled on `8729`; certificate `none` |
-| RouterOS HTTPS REST | `www-ssl` on `443`, LAN/WireGuard restricted, certificate `none` |
-| RouterOS certificates | none |
+| RouterOS API SSL | enabled on `8729`; certificate `none`; unused by OpenTofu |
+| RouterOS HTTPS REST | `www-ssl` on `8443`, LAN/WireGuard restricted, certificate `homelab-router-rest` with IP SAN `192.168.88.1` |
+| RouterOS certificates | trusted local `homelab-router-ca`; REST, AdGuard, and Router Web server certificates valid until `2028-10-14` |
+| AdGuard HTTPS | trusted `adguard.nairdev.com` reverse proxy on `443`, LAN/WireGuard restricted, HTTP `302` to `/login.html` |
+| SNMP monitoring | enabled; `prometheus` is read-only authPriv/private from `192.168.88.20/32`; default `public` community disabled |
 | `nmac` lease ID | `*1AB0` |
 | Home Assistant lease ID | `*1AB7` |
 
@@ -56,17 +58,17 @@ Do not change these without a fresh RouterOS backup/export and explicit apply co
 | Architecture | `aarch64` |
 | Main interface | `enu1u1c2` |
 | IP | `192.168.88.20/24` |
-| Root filesystem | `271G`, about `223G` free, `18%` used |
-| `/srv/data` | absent |
-| k3s | absent |
-| Ports `80`/`443`/`6443` | no listeners |
+| Root filesystem | `271G`, about `214G` free, `21%` used |
+| `/srv/data` | present on the root Btrfs filesystem; local-path PVCs are live |
+| k3s | `v1.36.2+k3s1`, enabled and live under Flux |
+| Ports `80`/`443`/`6443` | Traefik serves LAN ingress on `80`/`443`; Kubernetes API listens on `6443` |
 | SELinux | enforcing |
-| Active NetworkManager profile | `Wired connection 2` on `enu1u1c2` |
-| NetworkManager profile UUID | `2c145c77-880e-36a9-a419-55d1df2f951e` |
+| Active NetworkManager profile | `br0`; `enu1u1c2` is bridge port `br0-port-enu1u1c2` |
+| NetworkManager profile UUID | `br0` is `7f7c386a-3d10-404b-9928-2cd7d5bf4e3c`; port is `a1bbba23-c2c2-4985-addd-c624b780bad0` |
 | Host interface MAC | `F8:E4:3B:54:E7:03` |
-| Addressing method | NetworkManager DHCP (`ipv4.method auto`) |
+| Addressing method | NetworkManager DHCP on `br0` |
 | Default route / DNS | `192.168.88.1` / `192.168.88.1` |
-| Non-interactive sudo | unavailable |
+| Non-interactive sudo | generic sudo unavailable; root-owned maintenance wrapper allowlists app status/backup/recovery and reboot |
 | Cockpit socket | enabled/active |
 | libvirt VM | `haos` running |
 | Firewalld | enabled and active; current zone/rules require privilege and remain blocked |
@@ -80,7 +82,7 @@ Do not change these without a fresh RouterOS backup/export and explicit apply co
 | Autostart | enabled |
 | vCPU | 2 |
 | RAM | 4 GiB |
-| Network | direct/macvtap bridge to `enu1u1c2` |
+| Network | libvirt bridge interface on host `br0` |
 | MAC | `52:54:00:d4:bd:37` |
 | Current DHCP lease | `192.168.88.84` |
 | Next DHCP action | Reserve current `.84`; keep `.30` as later target convention |

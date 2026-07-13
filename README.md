@@ -6,12 +6,12 @@ Reproducible, recoverable single-node homelab: MikroTik RouterOS owns the LAN ed
 
 | Area | State |
 | --- | --- |
-| Router baseline | Backed up, reviewed, and safely applied |
+| Router baseline | Backed up and reviewed; trusted REST TLS, AdGuard HTTPS, and read-only SNMPv3 are live |
 | DHCP and DNS | `nmac` and Home Assistant reserved; clients use `192.168.88.1`; RouterOS forwards to AdGuard at `10.0.0.2` |
 | MacBook | Fedora Asahi at `192.168.88.20`; k3s, firewalld, and six core apps are live |
 | Home Assistant | `haos` VM at `192.168.88.84`; live and monitored; backup proof remains pending |
 | OpenTofu | Independent RouterOS and AdGuard roots scaffolded; no resources imported |
-| Recovery | Six encrypted app backup sets and a seven-monitor Uptime Kuma scratch restore are proven |
+| Recovery | Six encrypted app backup sets and a Uptime Kuma scratch restore are proven; current validation requires eleven desired monitors |
 | Kubernetes | k3s, Flux, alert delivery, drift repair, and reboot recovery are proven |
 
 ## Delivery Order
@@ -35,7 +35,7 @@ Live progress and deferred decisions are tracked in `docs/task-board.md` and `do
 
 - [x] Document the goal, current state, dependency graph, and delivery checklist.
 - [x] Forbid `*.nairdev.com`; use exact names or verified homelab-only subzones.
-- [x] Treat `adguard.nairdev.com` routing as unverified until an HTTPS UI path is proven.
+- [x] Verify `adguard.nairdev.com` resolves to `192.168.88.1` and serves the trusted HTTPS login route.
 - [x] Commit only intentional homelab files, excluding unrelated `.codex` tooling.
 - [x] Run checks and a secret scan, create the baseline commit, push `origin`, and create `~/homelab-backups/git/homelab.git`.
 
@@ -46,8 +46,8 @@ Live progress and deferred decisions are tracked in `docs/task-board.md` and `do
 - [x] Pin RouterOS provider `1.99.1` and AdGuard provider `1.7.0`.
 - [x] Require PBKDF2/AES-GCM state and plan encryption via `TF_VAR_state_passphrase`.
 - [x] Commit provider lock files after `tofu init`.
-- [ ] Take fresh RouterOS and AdGuard backups before imports.
-- [ ] With explicit approval, configure a RouterOS-local TLS certificate and trusted `ROS_CA_CERTIFICATE`; never use plaintext API `8728`.
+- [x] Take fresh RouterOS and zero-downtime AdGuard configuration backups before imports.
+- [x] Configure the approved RouterOS-local CA and trusted REST certificate on `www-ssl:8443`; plaintext API `8728` remains disabled.
 - [ ] Import the `nmac` and Home Assistant leases individually, recording IDs in `opentofu/routeros/imports.md`; require a zero-diff detailed plan after each.
 - [ ] Inventory and import AdGuard rewrites individually; import the full singleton configuration only after field-by-field capture and explicit ownership approval.
 - [ ] Copy encrypted state to `~/homelab-backups/opentofu/<timestamp>/` after every successful import/apply.
@@ -56,23 +56,23 @@ Live progress and deferred decisions are tracked in `docs/task-board.md` and `do
 ### Host and recovery
 
 - [ ] Run `make ansible-storage` twice; the second run must report no changes.
-- [ ] Verify `/srv/data`, `/srv/data/k3s-storage`, capacity, ownership, and permissions.
+- [x] Verify `/srv/data`, `/srv/data/k3s-storage`, capacity, ownership, and permissions.
 - [ ] Export Home Assistant XML and make a consistent disk backup.
-- [ ] In a console maintenance window, make Home Assistant reachable from both LAN clients and `nmac`; verify boot, `.84`, USB `10c4:ea70`, port `8123`, and autostart.
+- [x] Make Home Assistant reachable through host bridge `br0`; verify boot, `.84`, USB `10c4:ea70`, port `8123`, and autostart.
 - [ ] Add only currently needed host and k3s prerequisites to Ansible.
 - [ ] Bootstrap age/SOPS, keep the private key outside Git in an encrypted recovery bundle, and record the accepted unencrypted `/srv/data` risk.
 - [ ] Create encrypted off-host copies of RouterOS/AdGuard, Home Assistant, Git, and OpenTofu state.
 
 ### k3s, TLS, apps, and GitOps
 
-- [ ] Install a pinned stable ARM64 k3s release through Ansible; keep Traefik and ServiceLB and restrict `80`, `443`, and `6443` to LAN/WireGuard.
-- [ ] Prove node readiness, storage at `/srv/data/k3s-storage`, ingress, reboot recovery, and one pinned test workload.
-- [ ] Add and verify the test AdGuard rewrite with the reviewed OpenTofu plan.
-- [ ] Install cert-manager manually; prove exact-name staging then production certificates using a zone-only Cloudflare token stored with SOPS.
-- [ ] Confirm no public A/AAAA records or WAN forwards exist.
-- [ ] Restore one encrypted low-risk backup before deploying stateful apps.
-- [ ] Deploy Glance, Uptime Kuma, ntfy, and Healthchecks manually; add Prometheus/Grafana, and Loki only if measured need exists.
-- [ ] Bootstrap Flux only after manifests, restart recovery, SOPS decryption, and age-key recovery are proven.
+- [ ] Keep the live pinned ARM64 k3s, Traefik, and ServiceLB deployment; finish the privileged firewalld audit for `80`, `443`, and `6443`.
+- [x] Prove node readiness, storage at `/srv/data/k3s-storage`, ingress, reboot recovery, and one pinned test workload.
+- [x] Add and verify the test AdGuard rewrite.
+- [x] Install cert-manager; prove exact-name staging then production certificates using a zone-only Cloudflare token stored with SOPS.
+- [x] Confirm no public A/AAAA records or WAN forwards exist.
+- [x] Restore one encrypted low-risk backup before deploying stateful apps.
+- [x] Deploy Glance, Uptime Kuma, ntfy, Healthchecks, Prometheus, and Grafana; defer Loki until measured need exists.
+- [x] Bootstrap Flux after manifests, restart recovery, SOPS decryption, and age-key recovery are proven.
 
 Expansion remains gated on restore proof. Paperless, Actual, and Forgejo come next; firewall/WireGuard imports and all deferred services require separate reviewed work.
 

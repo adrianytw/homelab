@@ -5,28 +5,32 @@ Updated `2026-07-13`. A blocked task stops only its lane; see `human-review.md` 
 | ID | Lane | Status | Next action |
 | --- | --- | --- | --- |
 | REPO-BASELINE | repository | done | GitHub, local Git, the bare mirror, and live Flux were proven current before reliability hardening. |
-| REPO-CHECKS | repository | done | Subsystem logs, ledgers, shell tests, Ansible syntax, OpenTofu format/validation, YAML parse, and secret scan pass. |
-| REPO-COMMIT | repository | done | Verified work is synchronized across local Git, GitHub, the bare mirror, and Flux. |
+| REPO-CHECKS | repository | done | Shell fixtures, Kustomize renders, Prometheus validation, encrypted-manifest checks, and secret scan pass. |
+| REPO-SYNC | repository | in progress | Roll out the reliability changes, require Flux readiness at the new revision, then sync the bare mirror. |
 | TF-ROOTS | OpenTofu | done | RouterOS and AdGuard roots are independently pinned and encrypted. |
 | TF-STATE-BACKUP | OpenTofu | done | Helper passes encrypted fixture, mode, checksum, commit-ID, and plaintext-rejection checks; no live state exists. |
-| TF-ROUTER-INVENTORY | OpenTofu | done | IDs `*1AB0`/`*1AB7`; no certificates; `www-ssl:443` is restricted with certificate `none`. |
-| TF-ROUTER-TLS | OpenTofu | blocked | Prepare review packet; live change waits on `ROS-BACKUP`, `ROS-TLS`, and credentials. |
-| TF-ROUTER-IMPORT | OpenTofu | blocked | Requires trusted REST, state-passphrase custody, credentials, and fresh backup. |
-| TF-ADGUARD-IMPORT | OpenTofu | blocked | Requires verified HTTPS endpoint, recovery export, full rewrite inventory, and credentials. |
+| TF-ROUTER-INVENTORY | OpenTofu | done | IDs `*1AB0`/`*1AB7`, trusted local CA, and REST on `www-ssl:8443` are verified. |
+| TF-ROUTER-TLS | OpenTofu | done | Trusted CA and IP-SAN REST certificate are live; plaintext API remains disabled. |
+| TF-ROUTER-IMPORT | OpenTofu | blocked | Requires least-privilege credentials and state-passphrase custody; fresh backup exists. |
+| TF-ADGUARD-IMPORT | OpenTofu | blocked | Trusted HTTPS and config backup exist; full ownership choice and provider credentials remain. |
 | HOST-INVENTORY | host | done | Fresh read-only inventory recorded; per-command timeout and SSH connection reuse prevent hangs. |
-| HOST-STORAGE | host | blocked | Playbook will cover only current directories; apply waits on `HOST-SUDO`. |
-| HA-BACKUP | recovery | blocked | Procedure can be documented; live backup needs downtime, sudo, and age custody. |
-| HA-BRIDGE | recovery | blocked | Exact observed-profile migration and rollback packet is prepared; requires local console, sudo, XML verification, and approval. |
+| HOST-STORAGE | host | done | `/srv/data` and local-path PVC storage are live and exercised by encrypted backups. |
+| HOST-FIREWALL-AUDIT | host | blocked | Privileged rule inventory still requires attended sudo/local-console access. |
+| HA-BACKUP | recovery | partial | Fresh encrypted outer bundle/checksum exists; decryption, qcow2 checks, and isolated boot remain attended. |
+| HA-BRIDGE | recovery | done | `br0` carries host and HA VM; `.20`, `.84`, HTTP 200, libvirt running, and autostart are verified. |
 | SECRETS-TOOLS | recovery | done | Pinned age, checksum-verified SOPS, and kubectl are installed user-locally without sudo. |
-| SECRETS-BOOTSTRAP | recovery | blocked | Requires `AGE-CUSTODY`. |
-| K3S-AUTOMATION | cluster | done | Pinned `v1.36.2+k3s1` playbook and digest-pinned test workload prepared; not applied. |
+| SECRETS-BOOTSTRAP | recovery | done | SOPS age key, encrypted application secrets, Flux decryption, and recovery documentation are live. |
+| K3S-AUTOMATION | cluster | done | Pinned `v1.36.2+k3s1`, storage, Traefik, and digest-pinned test workload are live. |
 | K3S-FIREWALL-PACKET | cluster | done | Privileged inventory, decision gates, validation, and rollback are documented; no firewall change ran. |
-| K3S-PROOF | cluster | blocked | Execution packet is prepared; requires storage, sudo, privileged firewall review, and maintenance window. |
-| DNS-TLS-PROOF | network | blocked | Requires k3s proof, AdGuard import, Cloudflare token, and separate DNS approval. |
+| K3S-PROOF | cluster | done | Node, storage, ingress, workload, Flux drift repair, app recovery, and reboot recovery are proven. |
+| DNS-TLS-PROOF | network | done | Private rewrites and exact-name production certificates work without public A/AAAA records or WAN forwards. |
 | CORE-APPS | apps | done | Six core applications passed TLS, auth, persistence, and reboot checks. |
 | FLUX | GitOps | done | Reconciliation, suspension/resume, drift repair, SOPS, and reboot recovery were proven. |
 | MAINTENANCE-HELPER | reliability | done | Root-owned wrapper, validated sudoers rule, allowlist, argument rejection, and transient rollback are installed and proven. |
 | ALERT-DELIVERY | reliability | done | Guarded selector drift produced fresh firing and resolved ntfy messages; Flux repaired the target and all three scrapes recovered. |
-| APP-BACKUPS | reliability | done | Six `0700` backup sets, encrypted `0600` archives, checksums, listings, SQLite checks, and seven-monitor Uptime Kuma restore passed. |
+| APP-BACKUPS | reliability | done | Six encrypted app archives, atomic validation, SQLite checks, and the eleven-monitor Uptime Kuma gate pass. |
+| BACKUP-SCHEDULE | reliability | in progress | Deploy Healthchecks desired state, install off-host cron, and prove app, AdGuard, and HA freshness pings. |
+| PLATFORM-MONITORING | reliability | in progress | Roll out Flux, cert-manager, Traefik, nmac, RouterOS, and service telemetry plus three Grafana dashboards. |
 | RELIABILITY-REBOOT | reliability | done | SSH loss/recovery, host services, cert-manager retry, Flux, apps, monitoring, Grafana, and Home Assistant recovered. |
+| EXPANSION | apps | deferred | Loki, Scrutiny, NetAlertX, Paperless, Actual, and Forgejo wait for critical restore proof or measured need. |
 | VAULT | security | deferred | Reserve `vault.nairdev.com`; deploy only for a concrete runtime-secrets consumer. |

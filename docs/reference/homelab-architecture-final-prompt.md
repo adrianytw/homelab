@@ -1,6 +1,6 @@
 # Homelab architecture and implementation prompt
 
-> Historical design input. `README.md`, `docs/architecture.md`, and `docs/operating-policy.md` are authoritative where this document differs, especially for TLS wildcard scope and the unverified `adguard.nairdev.com` UI route.
+> Historical design input. `README.md`, `docs/architecture.md`, and `docs/operating-policy.md` are authoritative where this document differs, especially for TLS wildcard scope and the now-verified `adguard.nairdev.com` UI route.
 
 We are designing and implementing a personal homelab.
 

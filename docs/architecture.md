@@ -10,8 +10,8 @@ MikroTik hAP ax3
 MacBook Pro M1 14"
   Fedora Asahi Linux
   Cockpit
-  libvirt Home Assistant VM
-  k3s workloads
+  br0 shared by host and libvirt Home Assistant VM
+  single-node k3s + Flux workloads
   /srv/data/<service>
 
 Cloudflare
@@ -39,7 +39,7 @@ See `docs/ip-plan.md` for reserved addresses and deferred DHCP pool cleanup.
 
 ## DNS And TLS
 
-AdGuard owns private `nairdev.com` rewrites. HTTP apps point at `192.168.88.20`; `ha.nairdev.com` points at the Home Assistant VM IP. Do not create an `adguard.nairdev.com` rewrite until the actual HTTPS UI route is verified: `192.168.88.1` is the client DNS endpoint, not proof that it serves the AdGuard UI.
+AdGuard owns private `nairdev.com` rewrites. HTTP apps point at `192.168.88.20`; `ha.nairdev.com` points at the Home Assistant VM IP. The verified `adguard.nairdev.com` route points to `192.168.88.1`, where RouterOS reverse-proxies the AdGuard UI with the trusted `homelab-adguard` certificate.
 
 Use Let's Encrypt DNS-01 through Cloudflare. `nairdev.com` is shared, so never issue `*.nairdev.com`. Start with exact hostnames; use a wildcard only for a verified homelab-exclusive subzone:
 
@@ -58,17 +58,17 @@ Public certificates do not mean public exposure. No public A/AAAA records for pr
 
 | Namespace | Service | Hostname | Target | Exposure | Status |
 | --- | --- | --- | --- | --- | --- |
-| router | AdGuard | `adguard.nairdev.com` | unverified UI route | LAN/VPN | deferred rewrite |
+| router | AdGuard | `adguard.nairdev.com` | RouterOS HTTPS reverse proxy | LAN/VPN | live |
 | host | Cockpit | `cockpit.nairdev.com` | `192.168.88.20:9090` | LAN/VPN direct | optional rewrite |
-| core | Glance | `home.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | planned |
-| core | Uptime Kuma | `status.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | planned |
-| core | ntfy | `notify.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | planned |
-| core | Healthchecks | `health.ops.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | planned |
-| ops | Grafana | `grafana.nairdev.com` | `192.168.88.20` ingress | VPN preferred | planned |
-| ops | Prometheus | `prom.ops.nairdev.com` | `192.168.88.20` ingress | VPN/internal preferred | planned |
-| ops | Loki | `loki.ops.nairdev.com` | `192.168.88.20` ingress | VPN/internal preferred | planned |
-| ops | Scrutiny | `scrutiny.ops.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | planned |
-| net | NetAlertX | `netalert.net.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | planned |
+| core | Glance | `home.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | live |
+| core | Uptime Kuma | `status.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | live |
+| core | ntfy | `notify.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | live |
+| core | Healthchecks | `health.ops.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | live |
+| core | Grafana | `grafana.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | live |
+| core | Prometheus | `prom.ops.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | live |
+| ops | Loki | `loki.ops.nairdev.com` | `192.168.88.20` ingress | VPN/internal preferred | deferred until logs justify it |
+| ops | Scrutiny | `scrutiny.ops.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | deferred until storage need |
+| net | NetAlertX | `netalert.net.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | deferred until restore coverage |
 | net | Unbound | `unbound.net.nairdev.com` | explicit DNS exposure | LAN/VPN | optional |
 | home | Home Assistant | `ha.nairdev.com` | Home Assistant VM IP | LAN/VPN | current VM |
 | home | MQTT | `mqtt.home.nairdev.com` | explicit TCP exposure | LAN/VPN | deferred |
@@ -88,11 +88,18 @@ Public certificates do not mean public exposure. No public A/AAAA records for pr
 | ai | Langfuse | `langfuse.ai.nairdev.com` | `192.168.88.20` ingress | LAN/VPN | planned |
 | flux-system | Flux dashboard | `flux.k8s.nairdev.com` | `192.168.88.20` ingress | VPN | optional |
 
+Uptime Kuma is the authoritative endpoint monitor and reconciles eleven desired
+checks. Glance duplicates the nine human-facing service checks for a fast home
+page. Prometheus and Grafana own host and RouterOS resource telemetry; RouterOS
+is scraped through source-restricted, read-only SNMPv3 `authPriv`. Alertmanager
+delivers firing and resolved alerts to the private ntfy topic. No component
+mounts a container-runtime socket or creates public exposure.
+
 ## DNS Rewrite Map
 
 | Hostname | Target | Notes |
 | --- | --- | --- |
-| `adguard.nairdev.com` | deferred | Verify the HTTPS UI route before adding a rewrite; `192.168.88.1` is only the proven DNS endpoint |
+| `adguard.nairdev.com` | `192.168.88.1` | Verified trusted HTTPS reverse proxy to the AdGuard login route |
 | `cockpit.nairdev.com` | `192.168.88.20` | Optional direct host admin rewrite |
 | `home.nairdev.com` | `192.168.88.20` | Glance |
 | `status.nairdev.com` | `192.168.88.20` | Uptime Kuma |
