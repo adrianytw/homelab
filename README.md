@@ -6,13 +6,13 @@ Reproducible, recoverable single-node homelab: MikroTik RouterOS owns the LAN ed
 
 | Area | State |
 | --- | --- |
-| Router baseline | Backed up and reviewed; trusted REST TLS, AdGuard HTTPS, and read-only SNMPv3 are live |
+| Router baseline | Backed up and reviewed; trusted REST TLS, AdGuard HTTPS, read-only SNMPv3, and weekly age-encrypted backup packs are live |
 | DHCP and DNS | `nmac` and Home Assistant reserved; clients use `192.168.88.1`; RouterOS forwards to AdGuard at `10.0.0.2` |
 | MacBook | Fedora Asahi at `192.168.88.20`; k3s, firewalld, and six core apps are live |
-| Home Assistant | `haos` VM at `192.168.88.84`; live and monitored; backup proof remains pending |
+| Home Assistant | `haos` VM at `192.168.88.84`; live and monitored; backup freshness automation is live and isolated restore proof remains pending |
 | OpenTofu | Independent RouterOS and AdGuard roots scaffolded; no resources imported |
-| Recovery | Six encrypted app backup sets and a Uptime Kuma scratch restore are proven; current validation requires eleven desired monitors |
-| Kubernetes | k3s, Flux, alert delivery, drift repair, and reboot recovery are proven |
+| Recovery | Six atomic age-encrypted app backups and a Uptime Kuma scratch restore are proven; daily app/AdGuard backups, daily HA freshness checks, and weekly RouterOS backups are live |
+| Kubernetes | k3s, Flux, alert delivery, drift repair, reboot recovery, 10 Prometheus targets, 13 alert rules, and three Grafana dashboards are proven |
 
 ## Delivery Order
 

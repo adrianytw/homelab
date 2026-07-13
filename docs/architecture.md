@@ -39,7 +39,11 @@ See `docs/ip-plan.md` for reserved addresses and deferred DHCP pool cleanup.
 
 ## DNS And TLS
 
-AdGuard owns private `nairdev.com` rewrites. HTTP apps point at `192.168.88.20`; `ha.nairdev.com` points at the Home Assistant VM IP. The verified `adguard.nairdev.com` route points to `192.168.88.1`, where RouterOS reverse-proxies the AdGuard UI with the trusted `homelab-adguard` certificate.
+AdGuard owns private `nairdev.com` rewrites. HTTP apps point at `192.168.88.20`.
+`ha.nairdev.com` is not currently resolvable, so monitoring and bookmarks use
+`http://192.168.88.84:8123` until a reviewed rewrite exists. The verified
+`adguard.nairdev.com` route points to `192.168.88.1`, where RouterOS
+reverse-proxies the AdGuard UI with the trusted `homelab-adguard` certificate.
 
 Use Let's Encrypt DNS-01 through Cloudflare. `nairdev.com` is shared, so never issue `*.nairdev.com`. Start with exact hostnames; use a wildcard only for a verified homelab-exclusive subzone:
 
@@ -95,6 +99,12 @@ is scraped through source-restricted, read-only SNMPv3 `authPriv`. Alertmanager
 delivers firing and resolved alerts to the private ntfy topic. No component
 mounts a container-runtime socket or creates public exposure.
 
+The current computer is the off-host backup target. Its idempotent cron block
+runs atomic age-encrypted application backups daily at 03:15, AdGuard
+configuration backups at 03:45, a RouterOS pack Sunday at 04:15, and Home
+Assistant backup-freshness validation daily at 05:00. The RouterOS binary uses a
+random per-run password retained only as a nested age-encrypted sidecar.
+
 ## DNS Rewrite Map
 
 | Hostname | Target | Notes |
@@ -111,7 +121,7 @@ mounts a container-runtime socket or creates public exposure.
 | `scrutiny.ops.nairdev.com` | `192.168.88.20` | Scrutiny |
 | `netalert.net.nairdev.com` | `192.168.88.20` | NetAlertX |
 | `unbound.net.nairdev.com` | `192.168.88.20` | Optional; explicit DNS exposure required |
-| `ha.nairdev.com` | Home Assistant VM IP | Current lease `.84`, target convention `.30` |
+| `ha.nairdev.com` | not configured | Use direct `192.168.88.84:8123`; add a reviewed rewrite later |
 | `mqtt.home.nairdev.com` | deferred | Explicit TCP exposure required |
 | `nodered.home.nairdev.com` | deferred | Deferred |
 | `paperless.nairdev.com` | `192.168.88.20` | Paperless-ngx |

@@ -6,7 +6,7 @@ Updated `2026-07-13`. A blocked task stops only its lane; see `human-review.md` 
 | --- | --- | --- | --- |
 | REPO-BASELINE | repository | done | GitHub, local Git, the bare mirror, and live Flux were proven current before reliability hardening. |
 | REPO-CHECKS | repository | done | Shell fixtures, Kustomize renders, Prometheus validation, encrypted-manifest checks, and secret scan pass. |
-| REPO-SYNC | repository | in progress | Roll out the reliability changes, require Flux readiness at the new revision, then sync the bare mirror. |
+| REPO-SYNC | repository | done | GitHub and the bare mirror are synchronized; all six application Kustomizations and deployments are Ready at current `main`. |
 | TF-ROOTS | OpenTofu | done | RouterOS and AdGuard roots are independently pinned and encrypted. |
 | TF-STATE-BACKUP | OpenTofu | done | Helper passes encrypted fixture, mode, checksum, commit-ID, and plaintext-rejection checks; no live state exists. |
 | TF-ROUTER-INVENTORY | OpenTofu | done | IDs `*1AB0`/`*1AB7`, trusted local CA, and REST on `www-ssl:8443` are verified. |
@@ -29,8 +29,8 @@ Updated `2026-07-13`. A blocked task stops only its lane; see `human-review.md` 
 | MAINTENANCE-HELPER | reliability | done | Root-owned wrapper, validated sudoers rule, allowlist, argument rejection, and transient rollback are installed and proven. |
 | ALERT-DELIVERY | reliability | done | Guarded selector drift produced fresh firing and resolved ntfy messages; Flux repaired the target and all three scrapes recovered. |
 | APP-BACKUPS | reliability | done | Six encrypted app archives, atomic validation, SQLite checks, and the eleven-monitor Uptime Kuma gate pass. |
-| BACKUP-SCHEDULE | reliability | in progress | Deploy Healthchecks desired state, install off-host cron, and prove app, AdGuard, and HA freshness pings. |
-| PLATFORM-MONITORING | reliability | in progress | Roll out Flux, cert-manager, Traefik, nmac, RouterOS, and service telemetry plus three Grafana dashboards. |
+| BACKUP-SCHEDULE | reliability | done | Idempotent off-host cron runs daily application and AdGuard backups, weekly RouterOS backups, and daily HA freshness checks; all four Healthchecks checks are up. |
+| PLATFORM-MONITORING | reliability | done | Prometheus has 10/10 targets and 13/13 healthy rules; Uptime has eleven healthy desired monitors; Glance has nine; all three Grafana dashboards are provisioned. |
 | RELIABILITY-REBOOT | reliability | done | SSH loss/recovery, host services, cert-manager retry, Flux, apps, monitoring, Grafana, and Home Assistant recovered. |
 | EXPANSION | apps | deferred | Loki, Scrutiny, NetAlertX, Paperless, Actual, and Forgejo wait for critical restore proof or measured need. |
 | VAULT | security | deferred | Reserve `vault.nairdev.com`; deploy only for a concrete runtime-secrets consumer. |

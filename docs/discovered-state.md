@@ -17,7 +17,7 @@ Collected read-only over `ssh router` and `ssh nmac`; last refreshed `2026-07-13
 | DHCP network DNS | `192.168.88.1` |
 | RouterOS DNS server | `10.0.0.2` |
 | DNS remote requests | enabled |
-| RouterOS API | enabled on `8728`; review before OpenTofu use |
+| RouterOS API | plaintext service on `8728` is disabled |
 | RouterOS API SSL | enabled on `8729`; certificate `none`; unused by OpenTofu |
 | RouterOS HTTPS REST | `www-ssl` on `8443`, LAN/WireGuard restricted, certificate `homelab-router-rest` with IP SAN `192.168.88.1` |
 | RouterOS certificates | trusted local `homelab-router-ca`; REST, AdGuard, and Router Web server certificates valid until `2028-10-14` |
@@ -43,7 +43,7 @@ Collected read-only over `ssh router` and `ssh nmac`; last refreshed `2026-07-13
 | Item | Current value |
 | --- | --- |
 | WAN dst-nat | TCP `2222` to `192.168.88.138:2222` removed on `2026-06-27` |
-| Router services | `www`, `www-ssl`, `reverse-proxy`, `winbox`, `api`, `api-ssl` enabled and restricted to LAN + WireGuard source ranges |
+| Router services | `www`, `www-ssl`, `reverse-proxy`, `winbox`, and `api-ssl` are enabled and LAN/WireGuard restricted; plaintext `api` is disabled |
 | WireGuard listen port | UDP `443` |
 
 Do not change these without a fresh RouterOS backup/export and explicit apply confirmation.

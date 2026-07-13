@@ -12,5 +12,4 @@ Nothing here blocks unrelated lanes. Resolve an item by recording the decision a
 | ROS-ACCOUNT | Choose a dedicated least-privilege OpenTofu account or approve the existing account. | `ROS_USERNAME`/`ROS_PASSWORD` are absent. | Provider connectivity/imports. |
 | STATE-CUSTODY | Store `TF_VAR_state_passphrase` outside Git with recovery instructions. | No OpenTofu state exists. | First import/state creation. |
 | ADG-CONFIG | Decide whether OpenTofu owns full `adguard_config` or rewrites only. | Trusted HTTPS and encrypted YAML backup are proven; provider singleton ID `1` owns all supported configuration. | Singleton import. |
-| ROUTER-BACKUP-AUTO | Choose secure noninteractive delivery for the RouterOS binary-backup password. | Public-key SSH and manual encrypted binary backup work; the weekly Healthchecks check remains paused. | Weekly RouterOS backup schedule. |
 | EXPANSION-RESTORE | Complete the HA isolated boot test before adding critical stateful apps. | Core apps and app restores are proven; the critical VM restore is not. | Paperless, Actual, Forgejo, and later services. |
