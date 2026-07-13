@@ -6,6 +6,7 @@ for script in scripts/*.sh; do
 done
 
 scripts/test-backup-opentofu-state.sh
+scripts/test-backup-app.sh
 
 required=(
   COMMANDS.md

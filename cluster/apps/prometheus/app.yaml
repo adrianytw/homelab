@@ -8,6 +8,10 @@ data:
       evaluation_interval: 30s
     rule_files:
       - /etc/prometheus/rules/*.yaml
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: [alertmanager.core.svc.cluster.local:9093]
     scrape_configs:
       - job_name: prometheus
         static_configs:
@@ -85,6 +89,153 @@ spec:
   accessModes: [ReadWriteOnce]
   resources: {requests: {storage: 10Gi}}
   storageClassName: local-path
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: alertmanager, namespace: core}
+data:
+  alertmanager.yml: |
+    route:
+      receiver: discard
+      group_by: [alertname, severity]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+        - receiver: ntfy
+          matchers: [severity=~"warning|critical"]
+    receivers:
+      - name: discard
+      - name: ntfy
+        webhook_configs:
+          - url: http://ntfy-alertmanager.core.svc.cluster.local:8000/hook
+            send_resolved: true
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: alertmanager-data, namespace: core}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 1Gi}}
+  storageClassName: local-path
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: alertmanager, namespace: core}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: alertmanager}}
+  template:
+    metadata: {labels: {app: alertmanager}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {fsGroup: 65534, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: alertmanager
+          image: quay.io/prometheus/alertmanager@sha256:51a825c2a40acc3e338fdd00d622e01ec090f72be2b3ea46be0839cd47a4d286
+          args: [--config.file=/etc/alertmanager/alertmanager.yml, --storage.path=/alertmanager]
+          ports: [{name: http, containerPort: 9093}]
+          startupProbe: {httpGet: {path: /-/ready, port: http}, failureThreshold: 30, periodSeconds: 5}
+          readinessProbe: {httpGet: {path: /-/ready, port: http}}
+          livenessProbe: {httpGet: {path: /-/healthy, port: http}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+          volumeMounts:
+            - {name: config, mountPath: /etc/alertmanager, readOnly: true}
+            - {name: data, mountPath: /alertmanager}
+      volumes:
+        - {name: config, configMap: {name: alertmanager}}
+        - {name: data, persistentVolumeClaim: {claimName: alertmanager-data}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: alertmanager, namespace: core}
+spec:
+  selector: {app: alertmanager}
+  ports: [{name: http, port: 9093, targetPort: http}]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: ntfy-alertmanager, namespace: core}
+data:
+  config.yml: |
+    http:
+      addr: :8000
+    ntfy:
+      baseurl: http://ntfy.core.svc.cluster.local
+      notification:
+        topic: homelab-alerts
+        priority: 'status == "firing" ? "high" : "default"'
+        tags:
+          - {tag: rotating_light, condition: 'status == "firing"'}
+          - {tag: white_check_mark, condition: 'status == "resolved"'}
+        templates:
+          title: '{{ if eq .Status "resolved" }}Resolved: {{ end }}{{ index .Annotations "summary" }}'
+          description: '{{ index .Labels "severity" }} · {{ index .Labels "alertname" }}'
+      async: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: ntfy-alertmanager, namespace: core}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: ntfy-alertmanager}}
+  template:
+    metadata: {labels: {app: ntfy-alertmanager}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {fsGroup: 65534, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
+      initContainers:
+        - name: auth-config
+          image: docker.io/library/busybox@sha256:9532d8c39891ca2ecde4d30d7710e01fb739c87a8b9299685c63704296b16028
+          command: [/bin/sh, -ceu]
+          args:
+            - |
+              umask 077
+              printf 'ntfy:\n  auth:\n    basic:\n      username: "%s"\n      password: "%s"\n' "$(cat /secret/username)" "$(cat /secret/password)" > /runtime/auth.yml
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
+            - {name: secret, mountPath: /secret, readOnly: true}
+            - {name: runtime, mountPath: /runtime}
+      containers:
+        - name: ntfy-alertmanager
+          image: ghcr.io/alexbakker/alertmanager-ntfy@sha256:2a862f23c8fb67f777824979487c06a417b2f9bbbc2eb45a974a1fb45b9bbff3
+          args: [--configs=/config/config.yml,/runtime/auth.yml]
+          ports: [{name: http, containerPort: 8000}]
+          startupProbe: {httpGet: {path: /health, port: http}, failureThreshold: 30, periodSeconds: 5}
+          readinessProbe: {httpGet: {path: /health, port: http}}
+          livenessProbe: {httpGet: {path: /health, port: http}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
+            - {name: runtime, mountPath: /runtime, readOnly: true}
+      volumes:
+        - {name: config, configMap: {name: ntfy-alertmanager}}
+        - {name: secret, secret: {secretName: ntfy-admin}}
+        - {name: runtime, emptyDir: {medium: Memory}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ntfy-alertmanager, namespace: core}
+spec:
+  selector: {app: ntfy-alertmanager}
+  ports: [{name: http, port: 8000, targetPort: http}]
 ---
 apiVersion: apps/v1
 kind: Deployment

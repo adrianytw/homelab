@@ -1,10 +1,10 @@
 # Task Board
 
-Updated `2026-07-11`. A blocked task stops only its lane; see `human-review.md` for the decision or credential required.
+Updated `2026-07-12`. A blocked task stops only its lane; see `human-review.md` for the decision or credential required.
 
 | ID | Lane | Status | Next action |
 | --- | --- | --- | --- |
-| REPO-BASELINE | repository | done | Local commits and bare mirror are current; GitHub push is intentionally deferred. |
+| REPO-BASELINE | repository | done | GitHub, local Git, the bare mirror, and live Flux were proven current before reliability hardening. |
 | REPO-CHECKS | repository | done | Subsystem logs, ledgers, shell tests, Ansible syntax, OpenTofu format/validation, YAML parse, and secret scan pass. |
 | REPO-COMMIT | repository | done | Verified work committed locally and synchronized to the bare mirror; GitHub push remains deferred. |
 | TF-ROOTS | OpenTofu | done | RouterOS and AdGuard roots are independently pinned and encrypted. |
@@ -23,6 +23,8 @@ Updated `2026-07-11`. A blocked task stops only its lane; see `human-review.md` 
 | K3S-FIREWALL-PACKET | cluster | done | Privileged inventory, decision gates, validation, and rollback are documented; no firewall change ran. |
 | K3S-PROOF | cluster | blocked | Execution packet is prepared; requires storage, sudo, privileged firewall review, and maintenance window. |
 | DNS-TLS-PROOF | network | blocked | Requires k3s proof, AdGuard import, Cloudflare token, and separate DNS approval. |
-| CORE-APPS | apps | blocked | Requires restore proof; no speculative manifests. |
-| FLUX | GitOps | blocked | Requires manual manifests, SOPS recovery, restart proof, restore proof, and auth decision. |
+| CORE-APPS | apps | done | Six core applications passed TLS, auth, persistence, and reboot checks. |
+| FLUX | GitOps | done | Reconciliation, suspension/resume, drift repair, SOPS, and reboot recovery were proven. |
+| ALERT-DELIVERY | reliability | blocked | Manifests are prepared; live firing/resolved proof waits on passwordless `nmac` sudo. |
+| APP-BACKUPS | reliability | blocked | The encrypted command and recovery fixture pass; six live archives wait on local tools and passwordless `nmac` sudo. |
 | VAULT | security | deferred | Reserve `vault.nairdev.com`; deploy only for a concrete runtime-secrets consumer. |

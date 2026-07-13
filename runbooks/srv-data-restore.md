@@ -1,48 +1,53 @@
-# /srv/data Backup And Restore
+# Application Backup And Restore
 
 ## Purpose
 
-Prove that one stopped low-risk application can be backed up, decrypted, restored with Linux metadata, and started from restored data. A synthetic round trip tests tooling but does not satisfy this application gate.
+Create and validate encrypted application-PVC backups, and restore one to
+scratch without touching live data.
 
 ## Prerequisites
 
-- SOPS/age recovery is proven and the public `AGE_RECIPIENT` is available.
-- The service data path is exactly `/srv/data/<service>` and the service is stopped cleanly.
-- The application image UID/GID and expected ownership are recorded.
-- The current computer has enough free space for the encrypted archive and scratch restore.
+- `age`, `age-keygen`, `sops`, `sqlite3`, and passwordless backup-time sudo on
+  `nmac` are available.
+- The SOPS age identity is readable at `$SOPS_AGE_KEY_FILE` (or the standard
+  SOPS age path).
+- This computer has enough free space for the encrypted archive and scratch.
 
-Create the archive on `nmac` only after stopping the service:
+Create one or all allowlisted backups:
 
 ```sh
-service=<service>
-stamp=$(date -u +%Y%m%dT%H%M%SZ)
-sudo tar --acls --xattrs --selinux --numeric-owner \
-  -C /srv/data -cpf - "$service" \
-  | age -r "$AGE_RECIPIENT" \
-  >"$HOME/${service}-${stamp}.tar.age"
-sha256sum "$HOME/${service}-${stamp}.tar.age" >"$HOME/${service}-${stamp}.tar.age.sha256"
+make backup-app APP=uptime-kuma
+make backup-apps
 ```
 
-Copy the encrypted archive and checksum to `~/homelab-backups/data/<service>/<stamp>/` with directory mode `0700` and file mode `0600`.
+Only `glance`, `uptime-kuma`, `ntfy`, `healthchecks`, `prometheus`, and
+`grafana` are accepted. The command verifies SSH, sudo, SOPS decryption, Flux,
+the bound local-path PVC, space, permissions, checksum, archive listing, and
+SQLite databases. It never writes a plaintext archive or deletes an old one.
+A ten-minute transient systemd rollback plus the local exit trap restore the
+deployment and Flux if the command is interrupted.
 
-Restore to scratch first; never overwrite the live directory during validation:
+Restore to scratch first:
 
 ```sh
-scratch="/srv/data/.restore-${service}-${stamp}"
-sudo install -d -m 0700 "$scratch"
-age -d "$HOME/${service}-${stamp}.tar.age" \
-  | sudo tar --acls --xattrs --selinux --numeric-owner -xpf - -C "$scratch"
-sudo restorecon -RF "$scratch" 2>/dev/null || true
+archive="$HOME/homelab-backups/data/uptime-kuma/<UTC timestamp>/uptime-kuma.tar.age"
+scratch="$(mktemp -d)"
+age -d -i "$SOPS_AGE_KEY_FILE" "$archive" | tar -xpf - -C "$scratch"
+find "$scratch" -type f -name '*.db' -exec sqlite3 {} 'PRAGMA quick_check;' \;
+sqlite3 "$(find "$scratch" -type f -name kuma.db -print -quit)" \
+  'select count(*) from monitor;'
 ```
 
 ## Validation
 
-- `sha256sum -c` passes before decryption.
-- Scratch content, numeric ownership, modes, ACLs, xattrs, and SELinux labels match the source.
-- After validation, move the untouched old directory aside, move the restored directory into place, and start the service.
-- The application serves expected data after pod/process deletion and restart.
-- Keep the previous directory until the application validation is complete.
+- `sha256sum -c SHA256SUMS` passes before decryption.
+- Every SQLite `quick_check` returns `ok`; Uptime Kuma reports seven monitors.
+- Scratch ownership, modes, ACLs, xattrs, and SELinux labels match the source.
+- Keep the previous archive and any failed scratch tree until validation ends.
 
 ## Rollback
 
-Stop the application, move the failed restored directory aside, restore the untouched previous directory name, and restart. Preserve both encrypted archive and previous directory for investigation; do not automatically delete either.
+Scratch validation does not alter live data: delete the scratch directory. If
+an interrupted backup leaves a workload stopped, wait up to ten minutes for the
+transient rollback, then resume its Flux Kustomization and scale only its
+deployment to one replica.
