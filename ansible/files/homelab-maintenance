@@ -26,10 +26,13 @@ esac
 
 kube() { "$K3S" kubectl "$@"; }
 volume_path() {
-  local claim=$1 pv path
+  local claim=$1 pv host_path local_path path
   pv=$(kube -n core get pvc "$claim" -o jsonpath='{.spec.volumeName}')
   [[ -n "$pv" ]] || { echo "$claim is not bound" >&2; exit 1; }
-  path=$(kube get pv "$pv" -o jsonpath='{.spec.hostPath.path}')
+  host_path=$(kube get pv "$pv" -o jsonpath='{.spec.hostPath.path}')
+  local_path=$(kube get pv "$pv" -o jsonpath='{.spec.local.path}')
+  [[ -z "$host_path" || -z "$local_path" ]] || { echo "refusing ambiguous PVC path" >&2; exit 1; }
+  path=${host_path:-$local_path}
   [[ "$path" == /srv/data/k3s-storage/* ]] || { echo "refusing unexpected PVC path" >&2; exit 1; }
   printf '%s' "$path"
 }

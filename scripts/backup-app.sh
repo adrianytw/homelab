@@ -29,7 +29,8 @@ dest="$root/$app/$stamp"
 mkdir "$dest" || { echo "backup timestamp collision" >&2; exit 1; }
 chmod 0700 "$dest"
 
-mapfile -t sizes < <(maint inspect "$app" | /usr/bin/cut -f2)
+inspection=$(maint inspect "$app")
+mapfile -t sizes < <(printf '%s\n' "$inspection" | /usr/bin/cut -f2)
 (( ${#sizes[@]} > 0 )) || { echo "no application volume" >&2; exit 1; }
 bytes=0; for size in "${sizes[@]}"; do [[ "$size" =~ ^[0-9]+$ ]] || exit 1; ((bytes += size)); done
 available=$(df -PB1 "$dest" | awk 'NR==2 {print $4}')
