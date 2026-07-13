@@ -11,8 +11,8 @@ Reproducible, recoverable single-node homelab: MikroTik RouterOS owns the LAN ed
 | MacBook | Fedora Asahi at `192.168.88.20`; k3s, firewalld, and six core apps are live |
 | Home Assistant | `haos` VM at `192.168.88.84`; live and monitored; backup proof remains pending |
 | OpenTofu | Independent RouterOS and AdGuard roots scaffolded; no resources imported |
-| Recovery | age/SOPS and guarded backup tooling exist; live app backup/restore proof is pending |
-| Kubernetes | k3s and Flux are live; reliability acceptance and final reboot proof are pending |
+| Recovery | Six encrypted app backup sets and a seven-monitor Uptime Kuma scratch restore are proven |
+| Kubernetes | k3s, Flux, alert delivery, drift repair, and reboot recovery are proven |
 
 ## Delivery Order
 

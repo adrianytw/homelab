@@ -11,16 +11,24 @@ ssh -o BatchMode=yes nmac 'sudo -n true'
 
 Outcome: SSH key authentication succeeds; passwordless sudo is unavailable. No Ansible apply has run.
 
-Prepared, not run:
+Prepared:
 
 ```sh
 make ansible-storage
 make ansible-k3s
+```
+
+Storage and k3s remain separately review-gated.
+
+## 2026-07-13
+
+```sh
 make ansible-maintenance
 ```
 
-Storage and k3s remain separately review-gated. The maintenance playbook is the
-single attended prerequisite for reliability acceptance.
+Outcome: the root-owned `0755` maintenance wrapper and validated root-owned
+`0440` sudoers rule were installed. Allowed status/backup/alert/reboot operations
+worked; generic sudo, direct k3s, arbitrary apps, and caller paths were denied.
 
 ```sh
 make inventory-nmac

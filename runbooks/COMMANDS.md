@@ -12,6 +12,23 @@ Ansible syntax, secret scan, and `git diff --check` pass. Live server dry-run,
 alert, backup, restore, and reboot proof remain blocked only on the attended
 maintenance-wrapper install.
 
+## 2026-07-13 reliability acceptance
+
+- The guarded node-exporter selector failure fired `MonitoringTargetDown`; fresh
+  firing and resolved messages reached the private `homelab-alerts` topic.
+- Flux repaired the selector and Prometheus recovered its `alertmanager`, `nmac`,
+  and `prometheus` targets.
+- Six backup sets were created at timestamps `062159`, `062300`, `062421`,
+  `062531`, `062651`, and `062811` UTC. All directories are `0700`; archives and
+  checksums are `0600`. Checksums, encrypted tar listings, and SQLite checks pass.
+- The Uptime Kuma archive restored to scratch with `quick_check=ok` and exactly
+  seven monitors.
+- The guarded reboot produced observed SSH loss and recovery. sshd, firewalld,
+  k3s, cert-manager, Flux, all six applications, Grafana, three Prometheus
+  targets, Alertmanager discovery, and Home Assistant recovered.
+- RouterOS, AdGuard, DNS, DHCP, firewall configuration, WireGuard, certificates,
+  ingress, and public exposure were not changed.
+
 ## 2026-07-11 bridge and firewall evidence
 
 ```sh

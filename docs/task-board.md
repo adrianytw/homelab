@@ -1,12 +1,12 @@
 # Task Board
 
-Updated `2026-07-12`. A blocked task stops only its lane; see `human-review.md` for the decision or credential required.
+Updated `2026-07-13`. A blocked task stops only its lane; see `human-review.md` for the decision or credential required.
 
 | ID | Lane | Status | Next action |
 | --- | --- | --- | --- |
 | REPO-BASELINE | repository | done | GitHub, local Git, the bare mirror, and live Flux were proven current before reliability hardening. |
 | REPO-CHECKS | repository | done | Subsystem logs, ledgers, shell tests, Ansible syntax, OpenTofu format/validation, YAML parse, and secret scan pass. |
-| REPO-COMMIT | repository | done | Verified work committed locally and synchronized to the bare mirror; GitHub push remains deferred. |
+| REPO-COMMIT | repository | done | Verified work is synchronized across local Git, GitHub, the bare mirror, and Flux. |
 | TF-ROOTS | OpenTofu | done | RouterOS and AdGuard roots are independently pinned and encrypted. |
 | TF-STATE-BACKUP | OpenTofu | done | Helper passes encrypted fixture, mode, checksum, commit-ID, and plaintext-rejection checks; no live state exists. |
 | TF-ROUTER-INVENTORY | OpenTofu | done | IDs `*1AB0`/`*1AB7`; no certificates; `www-ssl:443` is restricted with certificate `none`. |
@@ -25,8 +25,8 @@ Updated `2026-07-12`. A blocked task stops only its lane; see `human-review.md` 
 | DNS-TLS-PROOF | network | blocked | Requires k3s proof, AdGuard import, Cloudflare token, and separate DNS approval. |
 | CORE-APPS | apps | done | Six core applications passed TLS, auth, persistence, and reboot checks. |
 | FLUX | GitOps | done | Reconciliation, suspension/resume, drift repair, SOPS, and reboot recovery were proven. |
-| MAINTENANCE-HELPER | reliability | blocked | Guarded wrapper and sudoers rule pass local checks; one attended `make ansible-maintenance` apply remains. |
-| ALERT-DELIVERY | reliability | blocked | Manifests and guarded failure operation are prepared; live firing/resolved ntfy proof follows helper installation. |
-| APP-BACKUPS | reliability | blocked | Encryption, truncation, allowlist, recovery, and local restore fixtures pass; six live archives follow helper installation. |
-| RELIABILITY-REBOOT | reliability | blocked | The guarded reboot is approved after backup/restore acceptance; final recovery proof has not run. |
+| MAINTENANCE-HELPER | reliability | done | Root-owned wrapper, validated sudoers rule, allowlist, argument rejection, and transient rollback are installed and proven. |
+| ALERT-DELIVERY | reliability | done | Guarded selector drift produced fresh firing and resolved ntfy messages; Flux repaired the target and all three scrapes recovered. |
+| APP-BACKUPS | reliability | done | Six `0700` backup sets, encrypted `0600` archives, checksums, listings, SQLite checks, and seven-monitor Uptime Kuma restore passed. |
+| RELIABILITY-REBOOT | reliability | done | SSH loss/recovery, host services, cert-manager retry, Flux, apps, monitoring, Grafana, and Home Assistant recovered. |
 | VAULT | security | deferred | Reserve `vault.nairdev.com`; deploy only for a concrete runtime-secrets consumer. |
