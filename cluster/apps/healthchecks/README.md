@@ -4,8 +4,8 @@ Internal cron-job monitoring at `https://health.ops.nairdev.com`, using the
 official ARM64 image, SQLite on a local-path PVC, and SOPS-encrypted credentials.
 
 An idempotent init container migrates the database, maintains the `Homelab`
-project and superuser, and provisions these stable slug-based checks in the
-`America/Chicago` timezone:
+project and superuser, removes only a sole empty bootstrap-default project, and
+provisions these stable slug-based checks in the `America/Chicago` timezone:
 
 | Check | Schedule | Grace | State |
 | --- | --- | --- | --- |

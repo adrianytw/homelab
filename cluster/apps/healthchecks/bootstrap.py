@@ -168,3 +168,11 @@ with transaction.atomic():
     channel.disabled = False
     channel.save()
     channel.checks.set(managed)
+
+    extras = list(Project.objects.filter(owner=user).exclude(pk=project.pk)[:2])
+    if (
+        len(extras) == 1
+        and not Check.objects.filter(project=extras[0]).exists()
+        and not Channel.objects.filter(project=extras[0]).exists()
+    ):
+        extras[0].delete()
