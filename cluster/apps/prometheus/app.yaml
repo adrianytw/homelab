@@ -361,7 +361,7 @@ spec:
   template:
     metadata:
       labels: {app: prometheus}
-      annotations: {homelab.nairdev.com/config-revision: "7"}
+      annotations: {homelab.nairdev.com/config-revision: "8"}
     spec:
       automountServiceAccountToken: false
       securityContext: {fsGroup: 65532, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
