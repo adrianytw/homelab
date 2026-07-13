@@ -193,7 +193,7 @@ spec:
   template:
     metadata:
       labels: {app: ntfy-alertmanager}
-      annotations: {homelab.nairdev.com/config-revision: "2"}
+      annotations: {homelab.nairdev.com/config-revision: "3"}
     spec:
       automountServiceAccountToken: false
       securityContext: {fsGroup: 65534, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
@@ -222,7 +222,9 @@ spec:
       containers:
         - name: ntfy-alertmanager
           image: ghcr.io/alexbakker/alertmanager-ntfy@sha256:2a862f23c8fb67f777824979487c06a417b2f9bbbc2eb45a974a1fb45b9bbff3
-          args: [--configs=/config/config.yml,/runtime/auth.yml]
+          args:
+            - --configs=/config/config.yml,/runtime/auth.yml
+            - --ntfy-baseurl=http://$(NTFY_SERVICE_HOST):$(NTFY_SERVICE_PORT)
           ports: [{name: http, containerPort: 8000}]
           startupProbe: {httpGet: {path: /health, port: http}, failureThreshold: 30, periodSeconds: 5}
           readinessProbe: {httpGet: {path: /health, port: http}}
