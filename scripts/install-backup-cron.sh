@@ -23,6 +23,7 @@ fi
   echo '# BEGIN homelab backups'
   printf '15 3 * * * cd %q && env PATH=%q scripts/backup-daily.sh 2>&1 | /usr/bin/logger -t homelab-backup\n' "$repo" "$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
   printf '45 3 * * * cd %q && env PATH=%q scripts/backup-adguard.sh 2>&1 | /usr/bin/logger -t homelab-adguard-backup\n' "$repo" "$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
+  printf '15 4 * * 0 cd %q && env PATH=%q scripts/backup-routeros-encrypted.sh 2>&1 | /usr/bin/logger -t homelab-routeros-backup\n' "$repo" "$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
   printf '0 5 * * * cd %q && env PATH=%q scripts/check-ha-backup-freshness.sh 2>&1 | /usr/bin/logger -t homelab-ha-backup\n' "$repo" "$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
   echo '# END homelab backups'
 } | crontab -

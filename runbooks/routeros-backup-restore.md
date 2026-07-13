@@ -35,9 +35,23 @@ The script creates temporary timestamped files on RouterOS, copies them to:
 
 Then it removes only this run's generated RouterOS files.
 
+For unattended weekly protection, `scripts/backup-routeros-encrypted.sh` runs
+the capture with a random per-run RouterOS binary password, validates the full
+pack, stores that password only inside the age-encrypted pack, and removes
+plaintext staging. The password exists only in process memory and a nested
+age-encrypted sidecar, so even an untrappable interruption cannot leave it in
+plaintext beside the binary. The durable off-host artifact is also encrypted
+with the SOPS age recipient; the raw helper still requires either an explicit
+binary password or the explicit unencrypted flag.
+
 ## Validation
 
 - `routeros.backup` exists off-router and is encrypted with the provided password.
+- For the unattended wrapper, the outer `routeros-<timestamp>.tar.age` checksum,
+  encrypted listing, inner `SHA256SUMS`, and sanitized baseline review pass; no
+  plaintext stage or timestamped RouterOS file remains. The decrypted pack
+  contains `routeros-backup-password.txt.age`; decrypt that sidecar with the age
+  identity to obtain the binary restore password.
 - `routeros.rsc` exists off-router.
 - `firewall-filter.rsc`, `firewall-nat.rsc`, `wireguard.rsc`, `dhcp.txt`, `dns.txt`, `containers.txt`, `services.txt`, `certificates.txt`, and `snmp.txt` exist.
 - `snmp.txt` confirms the Prometheus community is source-restricted, read-only, and authPriv/private, with the default public community disabled.

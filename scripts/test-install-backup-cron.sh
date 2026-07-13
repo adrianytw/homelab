@@ -28,6 +28,7 @@ export PATH="$tmp/bin:$PATH" HOME="$tmp/home" MOCK_CRONTAB="$tmp/crontab"
 [[ $(grep -c '^# END homelab backups$' "$MOCK_CRONTAB") == 1 ]]
 [[ $(grep -c 'scripts/backup-daily.sh' "$MOCK_CRONTAB") == 1 ]]
 [[ $(grep -c 'scripts/backup-adguard.sh' "$MOCK_CRONTAB") == 1 ]]
+[[ $(grep -c 'scripts/backup-routeros-encrypted.sh' "$MOCK_CRONTAB") == 1 ]]
 [[ $(grep -c 'scripts/check-ha-backup-freshness.sh' "$MOCK_CRONTAB") == 1 ]]
 
 before=$(sha256sum "$MOCK_CRONTAB" | awk '{print $1}')

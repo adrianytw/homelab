@@ -49,8 +49,8 @@ checks = (
         "routeros-backup",
         "15 4 * * 0",
         60,
-        False,
-        "Paused until the binary-backup password has secure unattended delivery.",
+        True,
+        "Weekly RouterOS pack with nested age-encrypted random binary password.",
     ),
     (
         "Home Assistant backup freshness",

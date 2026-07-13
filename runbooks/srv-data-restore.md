@@ -26,8 +26,9 @@ time. Install or refresh the idempotent cron block with
 start/success/failure to Healthchecks, and continues the backup if Healthchecks
 is temporarily unavailable. Cron supplies no credentials; SSH key access and
 the local SOPS age identity must already work non-interactively.
-The same managed block captures AdGuard configuration at 03:45 and checks Home
-Assistant backup freshness at 05:00.
+The same managed block captures AdGuard configuration at 03:45, creates an
+age-encrypted RouterOS pack Sunday at 04:15, and checks Home Assistant backup
+freshness at 05:00.
 
 Only `glance`, `uptime-kuma`, `ntfy`, `healthchecks`, `prometheus`, and
 `grafana` are accepted. The root-owned wrapper resolves fixed PVCs internally
