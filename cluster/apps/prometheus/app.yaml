@@ -170,7 +170,7 @@ data:
     http:
       addr: :8000
     ntfy:
-      baseurl: http://ntfy.core.svc.cluster.local
+      baseurl: https://notify.nairdev.com
       notification:
         topic: homelab-alerts
         priority: 'status == "firing" ? "high" : "default"'
@@ -189,7 +189,9 @@ spec:
   replicas: 1
   selector: {matchLabels: {app: ntfy-alertmanager}}
   template:
-    metadata: {labels: {app: ntfy-alertmanager}}
+    metadata:
+      labels: {app: ntfy-alertmanager}
+      annotations: {homelab.nairdev.com/config-revision: "2"}
     spec:
       automountServiceAccountToken: false
       securityContext: {fsGroup: 65534, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
