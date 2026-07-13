@@ -56,8 +56,10 @@ data:
                     url: http://192.168.88.84:8123
                   - title: Router
                     url: https://router.nairdev.com
+                    allow-insecure: true
                   - title: AdGuard
                     url: https://adguard.nairdev.com
+                    allow-insecure: true
           - size: small
             widgets:
               - type: bookmarks
