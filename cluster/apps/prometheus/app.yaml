@@ -76,7 +76,7 @@ data:
             labels: {severity: warning}
             annotations: {summary: RouterOS has less than 15% free system flash}
           - alert: RouterUsbSpaceLow
-            expr: (hrStorageSize{job="router",hrStorageDescr=~"disk: USB FLASH DRIVE.*@.*"} - hrStorageUsed{job="router",hrStorageDescr=~"disk: USB FLASH DRIVE.*@.*"}) / hrStorageSize{job="router",hrStorageDescr=~"disk: USB FLASH DRIVE.*@.*"} < 0.15
+            expr: '(hrStorageSize{job="router",hrStorageDescr=~"disk: USB FLASH DRIVE.*@.*"} - hrStorageUsed{job="router",hrStorageDescr=~"disk: USB FLASH DRIVE.*@.*"}) / hrStorageSize{job="router",hrStorageDescr=~"disk: USB FLASH DRIVE.*@.*"} < 0.15'
             for: 10m
             labels: {severity: warning}
             annotations: {summary: RouterOS AdGuard USB storage has less than 15% free space}
