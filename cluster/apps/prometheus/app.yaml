@@ -197,7 +197,11 @@ spec:
           args:
             - |
               umask 077
-              printf 'ntfy:\n  auth:\n    basic:\n      username: "%s"\n      password: "%s"\n' "$(cat /secret/username)" "$(cat /secret/password)" > /runtime/auth.yml
+              username=$(cat /secret/username); password=$(cat /secret/password)
+              if printf %s "$username$password" | grep -q '[[:cntrl:]]'; then echo 'credential contains CR/LF' >&2; exit 1; fi
+              username=$(printf %s "$username" | sed "s/'/''/g")
+              password=$(printf %s "$password" | sed "s/'/''/g")
+              printf "ntfy:\n  auth:\n    basic:\n      username: '%s'\n      password: '%s'\n" "$username" "$password" > /runtime/auth.yml
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: {drop: [ALL]}

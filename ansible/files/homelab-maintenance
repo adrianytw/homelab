@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+K3S=/usr/local/bin/k3s
+SYSTEMCTL=/usr/bin/systemctl
+SYSTEMD_RUN=/usr/bin/systemd-run
+TAR=/usr/bin/tar
+
+operation=${1:-}
+if [[ "$operation" == reboot ]]; then
+  (($# == 1)) || exit 2
+  /usr/bin/systemctl reboot
+  exit
+fi
+app=${2:-}
+case "$app" in
+  glance) pvc=glance-assets ;;
+  uptime-kuma) pvc=uptime-kuma-data ;;
+  ntfy) pvc=ntfy-data ;;
+  healthchecks) pvc=healthchecks-data ;;
+  prometheus) pvc=prometheus-data; extra_pvc=alertmanager-data; extra_deployment=alertmanager ;;
+  grafana) pvc=grafana-data ;;
+  *) echo "invalid application" >&2; exit 2 ;;
+esac
+
+kube() { "$K3S" kubectl "$@"; }
+volume_path() {
+  local claim=$1 pv path
+  pv=$(kube -n core get pvc "$claim" -o jsonpath='{.spec.volumeName}')
+  [[ -n "$pv" ]] || { echo "$claim is not bound" >&2; exit 1; }
+  path=$(kube get pv "$pv" -o jsonpath='{.spec.hostPath.path}')
+  [[ "$path" == /srv/data/k3s-storage/* ]] || { echo "refusing unexpected PVC path" >&2; exit 1; }
+  printf '%s' "$path"
+}
+recover() {
+  if [[ "$app" == prometheus ]]; then
+    kube -n core patch service node-exporter --type=merge -p '{"spec":{"selector":{"app":"node-exporter"}}}' >/dev/null
+  fi
+  kube -n core scale "deployment/$app" --replicas=1 >/dev/null
+  [[ -z ${extra_deployment:-} ]] || kube -n core scale "deployment/$extra_deployment" --replicas=1 >/dev/null
+  kube -n flux-system patch "kustomization/$app" --type=merge -p '{"spec":{"suspend":false}}' >/dev/null
+  kube -n flux-system patch kustomization/flux-system --type=merge -p '{"spec":{"suspend":false}}' >/dev/null
+  kube -n core rollout status "deployment/$app" --timeout=180s
+  [[ -z ${extra_deployment:-} ]] || kube -n core rollout status "deployment/$extra_deployment" --timeout=180s
+  kube -n flux-system wait "kustomization/$app" --for=condition=Ready --timeout=180s
+}
+
+case "$operation" in
+  inspect)
+    (($# == 2)) || exit 2
+    path=$(volume_path "$pvc")
+    printf 'primary\t%s\n' "$(/usr/bin/du -sb "$path" | /usr/bin/cut -f1)"
+    if [[ -n ${extra_pvc:-} ]]; then
+      path=$(volume_path "$extra_pvc")
+      printf 'extra\t%s\n' "$(/usr/bin/du -sb "$path" | /usr/bin/cut -f1)"
+    fi
+    ;;
+  prepare)
+    (($# == 2)) || exit 2
+    unit="homelab-maintenance-rollback-$app"
+    "$SYSTEMD_RUN" --quiet --unit="$unit" --on-active=10m "$0" recover "$app"
+    kube -n flux-system patch kustomization/flux-system --type=merge -p '{"spec":{"suspend":true}}' >/dev/null
+    kube -n flux-system patch "kustomization/$app" --type=merge -p '{"spec":{"suspend":true}}' >/dev/null
+    kube -n core scale "deployment/$app" --replicas=0 >/dev/null
+    [[ -z ${extra_deployment:-} ]] || kube -n core scale "deployment/$extra_deployment" --replicas=0 >/dev/null
+    kube -n core wait --for=delete pod -l "app=$app" --timeout=120s
+    [[ -z ${extra_deployment:-} ]] || kube -n core wait --for=delete pod -l "app=$extra_deployment" --timeout=120s
+    ;;
+  stream)
+    (($# == 3)) || exit 2
+    case ${3:-primary} in
+      primary) path=$(volume_path "$pvc") ;;
+      extra) [[ -n ${extra_pvc:-} ]] || exit 2; path=$(volume_path "$extra_pvc") ;;
+      *) echo "invalid volume" >&2; exit 2 ;;
+    esac
+    "$TAR" --acls --xattrs --selinux --numeric-owner -C "$path" -cpf - .
+    ;;
+  recover)
+    (($# == 2)) || exit 2
+    recover
+    "$SYSTEMCTL" stop "homelab-maintenance-rollback-$app.timer" "homelab-maintenance-rollback-$app.service" 2>/dev/null || true
+    ;;
+  alert-test)
+    (($# == 2)) && [[ "$app" == prometheus ]] || exit 2
+    "$SYSTEMD_RUN" --quiet --unit=homelab-maintenance-rollback-prometheus --on-active=10m "$0" recover prometheus
+    kube -n flux-system patch kustomization/flux-system --type=merge -p '{"spec":{"suspend":true}}' >/dev/null
+    kube -n flux-system patch kustomization/prometheus --type=merge -p '{"spec":{"suspend":true}}' >/dev/null
+    kube -n core patch service node-exporter --type=merge -p '{"spec":{"selector":{"app":"node-exporter-alert-test"}}}'
+    kube -n core delete pod -l app=node-exporter
+    ;;
+  status)
+    (($# == 2)) || exit 2
+    kube -n flux-system get kustomization "$app"
+    kube -n core get deployment "$app"
+    [[ -z ${extra_deployment:-} ]] || kube -n core get deployment "$extra_deployment"
+    ;;
+  *) echo "invalid operation" >&2; exit 2 ;;
+esac

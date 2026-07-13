@@ -17,7 +17,7 @@ Updated `2026-07-12`. A blocked task stops only its lane; see `human-review.md` 
 | HOST-STORAGE | host | blocked | Playbook will cover only current directories; apply waits on `HOST-SUDO`. |
 | HA-BACKUP | recovery | blocked | Procedure can be documented; live backup needs downtime, sudo, and age custody. |
 | HA-BRIDGE | recovery | blocked | Exact observed-profile migration and rollback packet is prepared; requires local console, sudo, XML verification, and approval. |
-| SECRETS-TOOLS | recovery | blocked | Package candidates verified; installation waits on `LOCAL-SUDO`. Do not generate a private key. |
+| SECRETS-TOOLS | recovery | done | Pinned age, checksum-verified SOPS, and kubectl are installed user-locally without sudo. |
 | SECRETS-BOOTSTRAP | recovery | blocked | Requires `AGE-CUSTODY`. |
 | K3S-AUTOMATION | cluster | done | Pinned `v1.36.2+k3s1` playbook and digest-pinned test workload prepared; not applied. |
 | K3S-FIREWALL-PACKET | cluster | done | Privileged inventory, decision gates, validation, and rollback are documented; no firewall change ran. |
@@ -25,6 +25,8 @@ Updated `2026-07-12`. A blocked task stops only its lane; see `human-review.md` 
 | DNS-TLS-PROOF | network | blocked | Requires k3s proof, AdGuard import, Cloudflare token, and separate DNS approval. |
 | CORE-APPS | apps | done | Six core applications passed TLS, auth, persistence, and reboot checks. |
 | FLUX | GitOps | done | Reconciliation, suspension/resume, drift repair, SOPS, and reboot recovery were proven. |
-| ALERT-DELIVERY | reliability | blocked | Manifests are prepared; live firing/resolved proof waits on passwordless `nmac` sudo. |
-| APP-BACKUPS | reliability | blocked | The encrypted command and recovery fixture pass; six live archives wait on local tools and passwordless `nmac` sudo. |
+| MAINTENANCE-HELPER | reliability | blocked | Guarded wrapper and sudoers rule pass local checks; one attended `make ansible-maintenance` apply remains. |
+| ALERT-DELIVERY | reliability | blocked | Manifests and guarded failure operation are prepared; live firing/resolved ntfy proof follows helper installation. |
+| APP-BACKUPS | reliability | blocked | Encryption, truncation, allowlist, recovery, and local restore fixtures pass; six live archives follow helper installation. |
+| RELIABILITY-REBOOT | reliability | blocked | The guarded reboot is approved after backup/restore acceptance; final recovery proof has not run. |
 | VAULT | security | deferred | Reserve `vault.nairdev.com`; deploy only for a concrete runtime-secrets consumer. |

@@ -1,0 +1,23 @@
+---
+- name: Install guarded homelab maintenance access
+  hosts: macbook
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Install root-owned maintenance wrapper
+      ansible.builtin.copy:
+        src: ../files/homelab-maintenance
+        dest: /usr/local/sbin/homelab-maintenance
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Allow only the maintenance wrapper through sudo
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/homelab-maintenance
+        owner: root
+        group: root
+        mode: "0440"
+        validate: /usr/sbin/visudo -cf %s
+        content: |
+          nairda ALL=(root) NOPASSWD: /usr/local/sbin/homelab-maintenance *

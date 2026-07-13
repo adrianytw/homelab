@@ -4,10 +4,10 @@ Nothing here blocks unrelated lanes. Resolve an item by recording the decision a
 
 | ID | Review needed | Current evidence | Unblocks |
 | --- | --- | --- | --- |
-| LOCAL-SUDO | Provide an attended sudo window for approved workstation packages. | `sudo -n` fails on the current Ubuntu computer. | System installation of age, SOPS dependencies, DNS, and qemu tools. |
+| MAINTENANCE-SUDO | Run `make ansible-maintenance` and answer Ansible's sudo prompt once. | The playbook installs only the root-owned allowlisted wrapper and its validated sudoers rule. | Unattended alert, backup, restore, and approved reboot acceptance. |
 | HOST-SUDO | Provide an attended sudo window or secure Ansible become mechanism. | SSH key works; `sudo -n` fails on `nmac`. | Storage and k3s applies, privileged host inventory. |
 | HOST-FIREWALL | Run and review the privileged inventory in `runbooks/k3s-firewall-proof.md`; map the active interface/bridge zone and confirm how WireGuard sources arrive before choosing rules. | Firewalld is enabled/active; unprivileged rule inventory is denied. Prior inventory showed broad high-port access. | k3s exposure and persistent firewall rules. |
-| HOST-REBOOT | Approve a maintenance reboot after k3s and firewall validation. | No unattended reboot is authorized. | Reboot recovery acceptance. |
+| HOST-REBOOT | resolved | The reliability plan authorizes one guarded reboot after backup and restore validation. | Reboot recovery acceptance. |
 | HOST-POWER | Confirm lid-closed usage and desired suspend/hibernate policy. | Current policy has not been captured with privilege. | Power-management automation. |
 | HA-BACKUP | Approve graceful HA downtime for a consistent qcow2 backup. | VM is running/autostarted at `.84`; force-destroy is forbidden. | HA recovery artifact. |
 | HA-BRIDGE | Review `runbooks/home-assistant-bridge-migration.md` and schedule its local-console window. | Active profile is DHCP UUID `2c145c77-880e-36a9-a419-55d1df2f951e`; host MAC `F8:E4:3B:54:E7:03`; macvtap is present. Inactive XML still needs privileged preflight verification. | `nmac` reaching HA without RouterOS changes. |

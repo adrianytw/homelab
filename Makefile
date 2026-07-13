@@ -5,7 +5,7 @@ ANSIBLE_INVENTORY ?= ansible/inventory/homelab.ini
 ANSIBLE_FLAGS ?= -K
 STACK ?= all
 
-.PHONY: check inventory inventory-router inventory-nmac backup-routeros backup-opentofu backup-app backup-apps review-routeros ansible-check ansible-bootstrap ansible-storage ansible-k3s
+.PHONY: check inventory inventory-router inventory-nmac backup-routeros backup-opentofu backup-app backup-apps review-routeros ansible-check ansible-bootstrap ansible-storage ansible-k3s ansible-maintenance
 
 check:
 	@scripts/check.sh
@@ -37,6 +37,10 @@ ansible-check:
 	@$(ANSIBLE_PLAYBOOK) -i $(ANSIBLE_INVENTORY) ansible/playbooks/bootstrap.yml --syntax-check
 	@$(ANSIBLE_PLAYBOOK) -i $(ANSIBLE_INVENTORY) ansible/playbooks/storage.yml --syntax-check
 	@$(ANSIBLE_PLAYBOOK) -i $(ANSIBLE_INVENTORY) ansible/playbooks/k3s.yml --syntax-check
+	@$(ANSIBLE_PLAYBOOK) -i $(ANSIBLE_INVENTORY) ansible/playbooks/maintenance.yml --syntax-check
+
+ansible-maintenance:
+	@$(ANSIBLE_PLAYBOOK) -i $(ANSIBLE_INVENTORY) ansible/playbooks/maintenance.yml $(ANSIBLE_FLAGS)
 
 ansible-bootstrap:
 	@$(ANSIBLE_PLAYBOOK) -i $(ANSIBLE_INVENTORY) ansible/playbooks/bootstrap.yml $(ANSIBLE_FLAGS)

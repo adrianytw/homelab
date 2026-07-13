@@ -4,6 +4,14 @@ No Home Assistant shutdown, backup, restore, or network migration command has ru
 
 The HA and `/srv/data` procedures were expanded from placeholders, but remain review-gated and unexecuted.
 
+## 2026-07-12 reliability preparation
+
+Installed user-local age `1.1.1`, checksum-verified SOPS `3.13.2`, and kubectl
+`1.36.2`. Repository checks, backup failure/recovery fixtures, Kustomize render,
+Ansible syntax, secret scan, and `git diff --check` pass. Live server dry-run,
+alert, backup, restore, and reboot proof remain blocked only on the attended
+maintenance-wrapper install.
+
 ## 2026-07-11 bridge and firewall evidence
 
 ```sh

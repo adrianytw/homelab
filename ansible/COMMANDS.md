@@ -16,9 +16,11 @@ Prepared, not run:
 ```sh
 make ansible-storage
 make ansible-k3s
+make ansible-maintenance
 ```
 
-Both remain blocked on human-review gates; preparation is not approval to apply them.
+Storage and k3s remain separately review-gated. The maintenance playbook is the
+single attended prerequisite for reliability acceptance.
 
 ```sh
 make inventory-nmac

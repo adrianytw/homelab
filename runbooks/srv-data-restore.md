@@ -7,7 +7,7 @@ scratch without touching live data.
 
 ## Prerequisites
 
-- `age`, `age-keygen`, `sops`, `sqlite3`, and passwordless backup-time sudo on
+- `age`, `age-keygen`, `sops`, Python 3, and the guarded maintenance wrapper on
   `nmac` are available.
 - The SOPS age identity is readable at `$SOPS_AGE_KEY_FILE` (or the standard
   SOPS age path).
@@ -21,9 +21,10 @@ make backup-apps
 ```
 
 Only `glance`, `uptime-kuma`, `ntfy`, `healthchecks`, `prometheus`, and
-`grafana` are accepted. The command verifies SSH, sudo, SOPS decryption, Flux,
-the bound local-path PVC, space, permissions, checksum, archive listing, and
-SQLite databases. It never writes a plaintext archive or deletes an old one.
+`grafana` are accepted. The root-owned wrapper resolves fixed PVCs internally
+and refuses paths outside `/srv/data/k3s-storage`. The command verifies space,
+modes, checksums, archive listing, and SQLite databases. It never writes a
+plaintext archive or deletes an old one.
 A ten-minute transient systemd rollback plus the local exit trap restore the
 deployment and Flux if the command is interrupted.
 
@@ -33,9 +34,14 @@ Restore to scratch first:
 archive="$HOME/homelab-backups/data/uptime-kuma/<UTC timestamp>/uptime-kuma.tar.age"
 scratch="$(mktemp -d)"
 age -d -i "$SOPS_AGE_KEY_FILE" "$archive" | tar -xpf - -C "$scratch"
-find "$scratch" -type f -name '*.db' -exec sqlite3 {} 'PRAGMA quick_check;' \;
-sqlite3 "$(find "$scratch" -type f -name kuma.db -print -quit)" \
-  'select count(*) from monitor;'
+python3 - "$scratch" <<'PY'
+import sqlite3, sys
+from pathlib import Path
+db = next(Path(sys.argv[1]).rglob('kuma.db'))
+with sqlite3.connect(f'file:{db}?mode=ro', uri=True) as con:
+    assert con.execute('pragma quick_check').fetchone() == ('ok',)
+    assert con.execute('select count(*) from monitor').fetchone() == (7,)
+PY
 ```
 
 ## Validation
@@ -49,5 +55,5 @@ sqlite3 "$(find "$scratch" -type f -name kuma.db -print -quit)" \
 
 Scratch validation does not alter live data: delete the scratch directory. If
 an interrupted backup leaves a workload stopped, wait up to ten minutes for the
-transient rollback, then resume its Flux Kustomization and scale only its
-deployment to one replica.
+transient rollback, then run `sudo -n /usr/local/sbin/homelab-maintenance
+recover <app>` from `nmac`.
