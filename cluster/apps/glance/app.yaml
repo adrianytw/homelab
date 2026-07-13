@@ -13,25 +13,79 @@ data:
     server:
       proxied: true
       assets-path: /app/assets
+    branding:
+      app-name: Homelab
+      logo-text: H
+      hide-footer: true
     theme:
-      background-color: 240 8 9
-      primary-color: 43 50 70
-      contrast-multiplier: 1.1
+      background-color: 205 13 18
+      primary-color: 172 31 62
+      positive-color: 83 34 63
+      negative-color: 359 68 70
+      contrast-multiplier: 1.2
     pages:
       - name: Home
+        width: slim
+        head-widgets:
+          - type: search
+            search-engine: google
         columns:
           - size: full
             widgets:
-              - type: search
-                search-engine: google
+              - type: monitor
+                title: Services
+                style: compact
+                cache: 1m
+                sites:
+                  - title: Glance
+                    url: https://home.nairdev.com
+                  - title: Uptime Kuma
+                    url: https://status.nairdev.com
+                  - title: ntfy
+                    url: https://notify.nairdev.com
+                    check-url: https://notify.nairdev.com/v1/health
+                  - title: Healthchecks
+                    url: https://health.ops.nairdev.com
+                  - title: Prometheus
+                    url: https://prom.ops.nairdev.com
+                    check-url: https://prom.ops.nairdev.com/-/ready
+                  - title: Grafana
+                    url: https://grafana.nairdev.com
+                    check-url: https://grafana.nairdev.com/api/health
+                  - title: Home Assistant
+                    url: http://192.168.88.84:8123
+                  - title: Router
+                    url: https://router.nairdev.com
+                  - title: AdGuard
+                    url: https://adguard.nairdev.com
+          - size: small
+            widgets:
               - type: bookmarks
                 groups:
-                  - title: Homelab
+                  - title: Operations
                     links:
+                      - title: Uptime Kuma
+                        url: https://status.nairdev.com
+                      - title: ntfy
+                        url: https://notify.nairdev.com
+                      - title: Healthchecks
+                        url: https://health.ops.nairdev.com
+                      - title: Prometheus
+                        url: https://prom.ops.nairdev.com
+                      - title: Grafana
+                        url: https://grafana.nairdev.com
+                  - title: Infrastructure
+                    links:
+                      - title: Home Assistant
+                        url: http://192.168.88.84:8123
                       - title: Router
                         url: https://router.nairdev.com
                       - title: AdGuard
                         url: https://adguard.nairdev.com
+                  - title: Source/Test
+                    links:
+                      - title: GitHub
+                        url: https://github.com/adrianytw/homelab
                       - title: Test workload
                         url: https://test.k8s.nairdev.com
 ---
