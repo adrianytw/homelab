@@ -26,8 +26,8 @@ the underlying host, data, k3s, age identity, and Flux are healthy.
 - A controlled `MonitoringTargetDown` test produces one firing notification and
   one resolved notification in ntfy. Resume Flux and confirm selector repair.
 - Grafana serves the provisioned `nmac overview` dashboard.
-- Uptime Kuma shows successful heartbeats for the six core web services and
-  Home Assistant.
+- Uptime Kuma shows successful heartbeats for the six core web services, Home
+  Assistant, and AdGuard DNS through the client endpoint at `192.168.88.1`.
 - Delete the node-exporter pod once and confirm its DaemonSet and scrape recover.
 
 ## Rollback

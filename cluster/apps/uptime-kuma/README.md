@@ -8,5 +8,6 @@ The SOPS-encrypted admin credential is retained for recovery. Never mount a
 container-runtime socket. Stop the deployment before backing up or restoring
 the SQLite data.
 
-The one-shot setup Job idempotently adds checks for each core web application
-and Home Assistant using that encrypted credential.
+The one-shot setup Job idempotently adds checks for each core web application,
+Home Assistant, and the RouterOS-to-AdGuard client DNS path at `192.168.88.1`
+using that encrypted credential.

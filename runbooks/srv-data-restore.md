@@ -47,7 +47,7 @@ PY
 ## Validation
 
 - `sha256sum -c SHA256SUMS` passes before decryption.
-- Every SQLite `quick_check` returns `ok`; Uptime Kuma reports seven monitors.
+- Every SQLite `quick_check` returns `ok`; Uptime Kuma reports eight monitors.
 - Scratch ownership, modes, ACLs, xattrs, and SELinux labels match the source.
 - Keep the previous archive and any failed scratch tree until validation ends.
 
