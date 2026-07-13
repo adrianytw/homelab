@@ -102,7 +102,7 @@ data:
       receiver: discard
       group_by: [alertname, severity]
       group_wait: 30s
-      group_interval: 5m
+      group_interval: 30s
       repeat_interval: 4h
       routes:
         - receiver: ntfy
@@ -130,7 +130,9 @@ spec:
   strategy: {type: Recreate}
   selector: {matchLabels: {app: alertmanager}}
   template:
-    metadata: {labels: {app: alertmanager}}
+    metadata:
+      labels: {app: alertmanager}
+      annotations: {homelab.nairdev.com/config-revision: "2"}
     spec:
       automountServiceAccountToken: false
       securityContext: {fsGroup: 65534, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
